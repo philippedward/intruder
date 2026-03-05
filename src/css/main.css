@@ -246,6 +246,50 @@ a {
     0 0 30px #00ff41;
 }
 
+.panel-back svg {
+  text-shadow:
+    0 0 10px var(--crt-white),
+    0 0 30px var(--crt-white),
+    0 0 60px var(--crt-white-dim),
+    0 0 100px rgba(255, 255, 255, 0.2);
+}
+
+a {
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+  color: #00ff41;
+}
+
+.fisrt-information {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* =========================
+   ICON RETURN
+========================= */
+
+.panel-back-icon svg {
+  filter: drop-shadow(0 0 8px var(--crt-white))
+    drop-shadow(0 0 15px var(--crt-white-dim));
+}
+
+.panel-back-icon h2,
+.panel-back-icon svg {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.panel-back-icon {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 /* =========================
    ECRAN DE DEBUT
 ========================= */
@@ -705,10 +749,9 @@ input[type="range"]::-webkit-slider-thumb {
 ========================= */
 
 #first-screen {
+  background-color: #000000;
   width: 100vw;
   height: 100vh;
-  /* background-color: var(--crt-dark);
-  background-image: radial-gradient(ellipse at center, #001a05 0%, #000a00 70%); */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -718,27 +761,29 @@ input[type="range"]::-webkit-slider-thumb {
   padding: 10% 20%;
 }
 
+#first-screen::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--crt-white),
+    transparent
+  );
+  animation: scan-line 2s linear infinite;
+  pointer-events: none;
+  opacity: 0.2;
+}
+
 .vignet-image-animation {
   border-radius: 50%;
   width: 40%;
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
-}
-
-.vignet-image-animation::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(0, 0, 0, 0) 0%,
-    rgba(0, 0, 0, 0.2) 80%,
-    rgba(0, 0, 0, 1) 100%
-  );
-  pointer-events: none;
-  z-index: 2;
 }
 
 .image-animation {
@@ -763,23 +808,6 @@ input[type="range"]::-webkit-slider-thumb {
 
 #start-screen {
   display: none;
-}
-
-#first-screen::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--crt-white),
-    transparent
-  );
-  animation: scan-line 2s linear infinite;
-  pointer-events: none;
-  opacity: 0.2;
 }
 
 /* =========================

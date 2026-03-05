@@ -75,9 +75,6 @@ function updateTimer() {
 ========================= */
 
 document.getElementById("level-button").addEventListener("click", () => {
-  const pageSound = document.getElementById("page-sound");
-  pageSound.currentTime = 0;
-  pageSound.play().catch((err) => console.log("Erreur page-sound:", err));
   firstScreen.style.display = "none";
   startScreen.style.display = "flex";
 });
@@ -201,7 +198,7 @@ document.querySelectorAll(".monster-parent").forEach((monster) => {
 
     const loadingSound = document.getElementById("loading-sound");
     loadingSound.currentTime = 0;
-    loadingSound.volume = 0.05;
+    loadingSound.volume = 0.1;
     loadingSound
       .play()
       .catch((err) => console.log("Erreur loading-sound:", err));
@@ -288,7 +285,7 @@ document.getElementById("carousel").addEventListener("mousedown", (e) => {
 
   const loadingSound = document.getElementById("loading-sound");
   loadingSound.currentTime = 0;
-  loadingSound.volume = 0.05;
+  loadingSound.volume = 0.1;
   loadingSound.play().catch((err) => console.log("Erreur loading-sound:", err));
 
   requestAnimationFrame(() => {
@@ -587,6 +584,7 @@ function endGame(won) {
       gameOverScreen.style.display = "flex";
       menuButton.style.display = "none";
       gameOverMessage.innerHTML = "FAILED...";
+      resetSettings();
     });
 
     return;
@@ -598,6 +596,7 @@ function endGame(won) {
     gameOverScreen.style.display = "flex";
     menuButton.style.display = "none";
     gameOverMessage.innerHTML = `It's Gone... <span class="for-now-glow">For Now</span>`;
+    resetSettings();
 
     const winSound = document.getElementById("win-sound");
     const iiiiWin = document.getElementById("wiiin-sound");
@@ -649,6 +648,33 @@ function backToMenu() {
   clearIntervals();
   stopAllSounds();
 
+  function resetSettings() {
+    masterVolume = 0.5;
+    musicVolume = 0.5;
+    clickVolume = 0.5;
+
+    document.getElementById("master-slider").value = 50;
+    document.getElementById("music-slider").value = 50;
+    document.getElementById("click-slider").value = 50;
+    document.getElementById("master-value").textContent = "50%";
+    document.getElementById("music-value").textContent = "50%";
+    document.getElementById("click-value").textContent = "50%";
+
+    document.getElementById("brightness-slider").value = 50;
+    document.getElementById("brightness-value").textContent = "50%";
+    document
+      .querySelectorAll(".carousel-track img:not(.monster-parent)")
+      .forEach((img) => {
+        img.style.filter = "brightness(1)";
+      });
+
+    sensitivity = 5;
+    document.getElementById("sensitivity-slider").value = 5;
+    document.getElementById("sensitivity-value").textContent = "5";
+
+    applyVolumes();
+  }
+
   index = 0;
   timeLeft = 120;
   monsterCount = 0;
@@ -669,6 +695,7 @@ function backToMenu() {
   firstScreen.style.display = "flex";
   menuButton.style.display = "none";
 
+  resetSettings();
   playFirstScreenMusic();
 }
 
