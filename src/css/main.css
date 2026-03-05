@@ -1253,3 +1253,43 @@ button[disabled]:hover {
 #skip-button {
   align-self: flex-end;
 }
+
+/* =========================
+   EYE FOLLOW
+========================= */
+
+.follow-mouse {
+  position: relative;
+  width: 100%;
+}
+
+.outside {
+  display: block;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+  transition: opacity 0.1s ease;
+}
+
+.insdie {
+  width: 100%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 0.1s ease;
+}
+
+.image-animation {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}

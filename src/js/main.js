@@ -956,3 +956,44 @@ document.querySelectorAll("input[type='range']").forEach((slider) => {
     slider.classList.remove("dragging");
   });
 });
+
+/* =========================
+   EYE FOLLOW MOUSE
+========================= */
+
+const eyeInside = document.querySelector(".insdie");
+const eyeOutside = document.querySelector(".outside");
+const videoAnimation = document.querySelector(".image-animation");
+
+let eyeIdleTimeout = null;
+
+document.addEventListener("mousemove", (e) => {
+  if (!eyeInside || !eyeOutside) return;
+
+  // Affiche l'oeil, cache la vidéo
+  eyeInside.style.opacity = "1";
+  eyeOutside.style.opacity = "1";
+  if (videoAnimation) videoAnimation.style.opacity = "0";
+
+  const rect = eyeOutside.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+
+  const dx = e.clientX - centerX;
+  const dy = e.clientY - centerY;
+  const angle = Math.atan2(dy, dx);
+  const maxDist = rect.width * 0.1;
+
+  const x = Math.cos(angle) * maxDist;
+  const y = Math.sin(angle) * maxDist;
+
+  eyeInside.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+
+  // Reset le timer d'inactivité
+  clearTimeout(eyeIdleTimeout);
+  eyeIdleTimeout = setTimeout(() => {
+    eyeInside.style.opacity = "0";
+    eyeOutside.style.opacity = "0";
+    if (videoAnimation) videoAnimation.style.opacity = "1";
+  }, 1000);
+});
