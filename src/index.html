@@ -103,8 +103,8 @@
     ></audio>
     <div id="how-to-play">
       <div id="how-to-play-box">
-        <h2 id="game-title">HOW TO PLAY</h2>
-        <p>Find the intruder and survive the night !</p>
+        <h2 id="game-title">HOW TO PLAY...</h2>
+        <p>Find the intrudes and survive the night !</p>
         <button id="skip-button" class="difficulty-button">
           <h2>START</h2>
         </button>
@@ -137,15 +137,13 @@
           </p>
         </div>
       </div>
-      <div class="vignet-image-animation">
-        <div class="follow-mouse">
-          <img class="outside" src="img/base-code.png" alt="le tour de loeil" />
-          <img class="insdie" src="img/eye-code.png" alt="un oeil en blanc" />
-        </div>
-        <video class="image-animation" autoplay muted loop>
-          <source src="video/animation-logo.mp4" type="video/mp4" />
-        </video>
+      <div class="follow-mouse">
+        <img class="outside" src="img/base-code.png" alt="le tour de loeil" />
+        <img class="insdie" src="img/eye-code.png" alt="un oeil en blanc" />
       </div>
+      <video class="image-animation" autoplay muted loop>
+        <source src="video/animation-logo.mp4" type="video/mp4" />
+      </video>
     </div>
     <div id="start-screen">
       <h1 id="game-title">LEVELS<span class="point-animation-p">.</span></h1>
@@ -202,7 +200,19 @@
         <button class="difficulty-button" id="setting-button">
           <h2>SETTINGS</h2>
         </button>
-        <button class="difficulty-button" id="quit-button">
+        <button class="difficulty-button panel-back-icon" id="quit-button">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="11"
+            viewBox="0 0 18 11"
+            fill="none"
+          >
+            <path
+              d="M16.1053 0.916667V4.58333H3.62842L7.02 1.2925L5.68421 0L0 5.5L5.68421 11L7.02 9.69833L3.62842 6.41667H18V0.916667H16.1053Z"
+              fill="white"
+            />
+          </svg>
           <h2>LEAVE</h2>
         </button>
       </div>
@@ -261,7 +271,7 @@
       </div>
       <div id="panel-sound" style="display: none" class="setting-panel">
         <div class="setting-row">
-          <h2>MASTER</h2>
+          <h2>GENERAL</h2>
           <input type="range" id="master-slider" min="0" max="100" value="50" />
           <h2 id="master-value">50%</h2>
         </div>

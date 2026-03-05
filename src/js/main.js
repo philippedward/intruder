@@ -243,6 +243,7 @@ document.querySelectorAll(".monster-parent").forEach((monster) => {
 
       const glitchSound = document.getElementById("monster-glitch-sound");
       glitchSound.currentTime = 0;
+      glitchSound.volume = 0.2;
       glitchSound.play();
 
       setTimeout(() => {
@@ -673,6 +674,11 @@ function backToMenu() {
     document.getElementById("sensitivity-value").textContent = "5";
 
     applyVolumes();
+  }
+
+  function backToMenu() {
+    clearIntervals();
+    stopAllSounds();
   }
 
   index = 0;

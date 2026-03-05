@@ -406,7 +406,6 @@ a:hover {
   bottom: 3%;
   left: 3%;
   color: var(--crt-white);
-  background: rgba(0, 10, 0, 0.7);
 }
 
 .text-battery {
@@ -414,7 +413,6 @@ a:hover {
   top: 3%;
   left: 3%;
   color: var(--crt-white);
-  background: rgba(0, 10, 0, 0.7);
   z-index: 10;
   display: flex;
   flex-direction: column;
@@ -454,7 +452,6 @@ a:hover {
   text-shadow:
     0 0 10px var(--crt-white),
     0 0 25px var(--crt-white);
-  background: rgba(0, 10, 0, 0.7);
   padding: 0.3rem 0.5rem;
   animation: timer-pulse 1s steps(1) infinite;
 }
@@ -776,21 +773,6 @@ input[type="range"]::-webkit-slider-thumb {
   animation: scan-line 2s linear infinite;
   pointer-events: none;
   opacity: 0.2;
-}
-
-.vignet-image-animation {
-  border-radius: 50%;
-  width: 40%;
-  flex-shrink: 0;
-  position: relative;
-  overflow: hidden;
-}
-
-.image-animation {
-  width: 100% !important;
-  height: auto !important;
-  display: block;
-  object-fit: cover;
 }
 
 .fisrt-title {
@@ -1284,10 +1266,9 @@ button[disabled]:hover {
 
 .image-animation {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100% !important;
-  height: 100% !important;
+  top: 8.5%;
+  right: 20.5%;
+  width: 47.5%;
   object-fit: cover;
   z-index: 3;
   opacity: 0;
