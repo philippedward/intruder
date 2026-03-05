@@ -243,7 +243,7 @@ document.querySelectorAll(".monster-parent").forEach((monster) => {
 
       const glitchSound = document.getElementById("monster-glitch-sound");
       glitchSound.currentTime = 0;
-      glitchSound.volume = 0.2;
+      glitchSound.volume = 0.3;
       glitchSound.play();
 
       setTimeout(() => {
@@ -814,7 +814,7 @@ function showPauseMain() {
 }
 
 function showSettingsMain() {
-  pauseTitle.innerHTML = `SETTING<span class="point-animation-p">.</span>`;
+  pauseTitle.innerHTML = `SETTINGS<span class="point-animation-p">.</span>`;
   pauseMainButtons.style.display = "none";
   settingsMain.style.display = "flex";
   panelGraphics.style.display = "none";
@@ -838,13 +838,13 @@ document
   .addEventListener("click", showPauseMain);
 document
   .getElementById("btn-graphics")
-  .addEventListener("click", () => showPanel(panelGraphics, "GRAPHICS"));
+  .addEventListener("click", () => showPanel(panelGraphics, "GRAPHIC"));
 document
   .getElementById("btn-sound")
-  .addEventListener("click", () => showPanel(panelSound, "SOUND"));
+  .addEventListener("click", () => showPanel(panelSound, "SOUNDS"));
 document
   .getElementById("btn-controls")
-  .addEventListener("click", () => showPanel(panelControls, "CONTROLS"));
+  .addEventListener("click", () => showPanel(panelControls, "CONTROL"));
 
 document.querySelectorAll(".panel-back").forEach((btn) => {
   btn.addEventListener("click", showSettingsMain);
