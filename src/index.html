@@ -1,0 +1,400 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>INTRUDER...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="css/main.css" />
+    <link rel="icon" sizes="32x32" href="/src/img/logo.png?as=webp" />
+    <meta
+      name="description"
+      content="Jeu vidéo réaliser entièrement en Frontend et Blender. Projet eikon S6."
+    />
+  </head>
+  <body>
+    <audio
+      id="hover-sound"
+      class="sound-click"
+      src="sound/click/hover-button.mp3"
+      preload="auto"
+    ></audio>
+    <!-- <audio
+      id="page-sound"
+      class="sound-click"
+      src="sound/click/click-page.mp3"
+      preload="auto"
+    ></audio> -->
+    <audio
+      id="camera-sound"
+      class="sound-click"
+      src="sound/click/change-camera.mp3"
+      preload="auto"
+    ></audio>
+    <audio
+      id="monster-glitch-sound"
+      class="sound-music"
+      src="sound/noise/gltich-monster-foundv2.mp3"
+      preload="auto"
+    ></audio>
+    <audio
+      id="iiii-sound"
+      class="sound-music"
+      src="sound/noise/iiii-hearv2.mp3"
+      preload="auto"
+    ></audio>
+    <audio
+      id="dead-sound"
+      class="sound-music"
+      src="sound/noise/sound-dead.mp3"
+      preload="auto"
+      loop
+    ></audio>
+    <audio
+      id="time-sound"
+      class="sound-music"
+      src="sound/noise/time.mp3"
+      preload="auto"
+    ></audio>
+    <audio
+      id="ambiance-music"
+      class="sound-music"
+      src="sound/music/sound-ambiance.mp3"
+      preload="auto"
+      loop
+    ></audio>
+    <audio
+      id="first-screen-music"
+      class="sound-music"
+      src="sound/music/first-sreen.mp3"
+      preload="auto"
+      loop
+    ></audio>
+    <audio
+      id="win-sound"
+      class="sound-music"
+      src="sound/noise/static-radiov2.mp3"
+      preload="auto"
+      loop
+    ></audio>
+    <audio
+      id="missed-sound"
+      class="sound-click"
+      src="sound/click/sound-missed.mp3"
+      preload="auto"
+    ></audio>
+    <audio
+      id="loading-sound"
+      class="sound-click"
+      src="sound/click/loadingv3.mp3"
+      preload="auto"
+    ></audio>
+    <audio
+      id="r-door-sound"
+      class="sound-music"
+      src="sound/noise/right-door.mp3"
+      preload="auto"
+    ></audio>
+    <audio
+      id="l-door-sound"
+      class="sound-music"
+      src="sound/noise/left-door.mp3"
+      preload="auto"
+    ></audio>
+    <audio
+      id="wiiin-sound"
+      class="sound-music"
+      src="sound/noise/win-iiii.mp3"
+      preload="auto"
+      loop
+    ></audio>
+    <div id="how-to-play">
+      <div id="how-to-play-box">
+        <h2 id="game-title">HOW TO PLAY</h2>
+        <p>Find the intruder and survive the night !</p>
+        <button id="skip-button" class="difficulty-button">
+          <h2>SKIP</h2>
+        </button>
+      </div>
+    </div>
+    <div id="first-screen">
+      <div class="fisrt-title">
+        <h1 id="game-title-intro">
+          INTRUDER<span class="point-animation p-a-1">.</span
+          ><span class="point-animation p-a-2">.</span
+          ><span class="point-animation p-a-3">.</span>
+        </h1>
+        <div class="button-container-first">
+          <button class="difficulty-button" id="level-button">
+            <h2>PLAY</h2>
+          </button>
+          <button class="difficulty-button" id="setting-button-first">
+            <h2>SETTINGS</h2>
+          </button>
+        </div>
+        <div class="fisrt-information">
+          <p>a game by Rakowiecki Amélie</p>
+        </div>
+      </div>
+      <div class="vignet-image-animation">
+        <video class="image-animation" autoplay muted loop>
+          <source src="video/animation-logo.mp4" type="video/mp4" />
+        </video>
+      </div>
+    </div>
+    <div id="start-screen">
+      <h1 id="game-title">LEVELS<span class="point-animation-p">.</span></h1>
+      <div class="button-container button-container-first">
+        <button class="difficulty-button" data-difficulty="normal">
+          <h2>NORMAL</h2>
+        </button>
+        <button class="difficulty-button" data-difficulty="hard" disabled>
+          <h2>HARD</h2>
+        </button>
+        <button class="difficulty-button" id="back-to-first">
+          <h2>RETURN</h2>
+        </button>
+      </div>
+    </div>
+    <button id="menu-button">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="40"
+        height="40"
+        viewBox="0 0 211 211"
+        fill="none"
+      >
+        <path
+          d="M105.5 0C163.766 0 211 47.234 211 105.5C211 163.766 163.766 211 105.5 211C47.234 211 0 163.766 0 105.5C0 47.234 47.234 0 105.5 0ZM64.2998 136.75C61.5682 136.75 58.9482 137.835 57.0166 139.767C55.0851 141.698 54.0001 144.318 54 147.05C54 149.781 55.0852 152.401 57.0166 154.333C58.9482 156.265 61.5681 157.351 64.2998 157.351H146.7C149.432 157.351 152.052 156.265 153.983 154.333C155.915 152.401 157 149.781 157 147.05C157 144.318 155.915 141.698 153.983 139.767C152.052 137.835 149.432 136.75 146.7 136.75H64.2998ZM64.2998 95.375C61.5682 95.3751 58.9482 96.4601 57.0166 98.3916C55.085 100.323 54.0001 102.943 54 105.675C54 108.406 55.0851 111.026 57.0166 112.958C58.9482 114.89 61.5681 115.976 64.2998 115.976H146.7C149.432 115.976 152.052 114.89 153.983 112.958C155.915 111.026 157 108.406 157 105.675C157 102.943 155.915 100.323 153.983 98.3916C152.052 96.4601 149.432 95.3751 146.7 95.375H64.2998ZM64.2998 54C61.5681 54.0001 58.9482 55.085 57.0166 57.0166C55.085 58.9482 54.0001 61.5681 54 64.2998C54 67.0314 55.0851 69.6514 57.0166 71.583C58.9482 73.5146 61.5681 74.5996 64.2998 74.5996H146.7C149.432 74.5996 152.052 73.5146 153.983 71.583C155.915 69.6514 157 67.0314 157 64.2998C157 61.5681 155.915 58.9482 153.983 57.0166C152.052 55.085 149.432 54.0001 146.7 54H64.2998Z"
+          fill="white"
+        />
+      </svg>
+    </button>
+    <div id="pause-menu" style="display: none">
+      <div class="game-title-mouve">
+        <h1 id="pause-title">
+          PAUSED
+          <span class="point-animation-p">.</span>
+        </h1>
+      </div>
+
+      <div id="pause-main-buttons" class="button-container">
+        <button class="difficulty-button" id="resume-button">
+          <h2>CONTINUE</h2>
+        </button>
+        <button class="difficulty-button" id="setting-button">
+          <h2>SETTINGS</h2>
+        </button>
+        <button class="difficulty-button" id="quit-button">
+          <h2>LEAVE</h2>
+        </button>
+      </div>
+
+      <div id="settings-main" style="display: none" class="button-container">
+        <button class="difficulty-button" id="btn-graphics">
+          <h2>GRAPHICS</h2>
+        </button>
+        <button class="difficulty-button" id="btn-sound"><h2>SOUND</h2></button>
+        <button class="difficulty-button" id="btn-controls">
+          <h2>CONTROLS</h2>
+        </button>
+        <button class="difficulty-button" id="settings-back">
+          <h2>RETURN</h2>
+        </button>
+      </div>
+      <div id="panel-graphics" style="display: none" class="setting-panel">
+        <div class="setting-row">
+          <h2>BRIGHTNESS</h2>
+          <input
+            type="range"
+            id="brightness-slider"
+            min="0"
+            max="100"
+            value="50"
+          />
+          <h2 id="brightness-value">50%</h2>
+        </div>
+        <button class="difficulty-button panel-back"><h2>RETURN</h2></button>
+      </div>
+      <div id="panel-sound" style="display: none" class="setting-panel">
+        <div class="setting-row">
+          <h2>MASTER</h2>
+          <input type="range" id="master-slider" min="0" max="100" value="50" />
+          <h2 id="master-value">50%</h2>
+        </div>
+        <div class="setting-row">
+          <h2>MUSIC</h2>
+          <input type="range" id="music-slider" min="0" max="100" value="50" />
+          <h2 id="music-value">50%</h2>
+        </div>
+        <div class="setting-row">
+          <h2>CLICK</h2>
+          <input type="range" id="click-slider" min="0" max="100" value="50" />
+          <h2 id="click-value">50%</h2>
+        </div>
+        <button class="difficulty-button panel-back"><h2>RETURN</h2></button>
+      </div>
+      <div id="panel-controls" style="display: none" class="setting-panel">
+        <div class="setting-row">
+          <h2>MOUSE SENSITIVITY</h2>
+          <input
+            type="range"
+            id="sensitivity-slider"
+            min="1"
+            max="10"
+            value="5"
+          />
+          <h2 id="sensitivity-value">5</h2>
+        </div>
+        <button class="difficulty-button panel-back"><h2>RETURN</h2></button>
+      </div>
+    </div>
+
+    <div id="carousel" style="display: none">
+      <div id="timer">2:00</div>
+      <div class="text-battery">
+        <h3>03 / 03 / 2026</h3>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="60"
+          height="62"
+          viewBox="0 0 40 32"
+          fill="none"
+        >
+          <path
+            d="M16 1.00268e-07C16.5046 -0.000159579 16.9906 0.190406 17.3605 0.533497C17.7305 0.876587 17.9572 1.34684 17.995 1.85L18 2V3C18.5046 2.99984 18.9906 3.19041 19.3605 3.5335C19.7305 3.87659 19.9572 4.34685 19.995 4.85L20 5V7C20.0002 7.50458 19.8096 7.99057 19.4665 8.36055C19.1234 8.73053 18.6532 8.95716 18.15 8.995L18 9V10C18.0002 10.5046 17.8096 10.9906 17.4665 11.3605C17.1234 11.7305 16.6532 11.9572 16.15 11.995L16 12H2C1.49542 12.0002 1.00943 11.8096 0.639452 11.4665C0.269471 11.1234 0.0428434 10.6532 0.00500021 10.15L1.00268e-07 10V2C-0.000159579 1.49542 0.190406 1.00943 0.533497 0.639452C0.876587 0.269471 1.34684 0.0428434 1.85 0.00500021L2 1.00268e-07H16ZM16 2H2V10H16V2ZM4 3C4.26522 3 4.51957 3.10536 4.70711 3.29289C4.89464 3.48043 5 3.73478 5 4V8C5 8.26522 4.89464 8.51957 4.70711 8.70711C4.51957 8.89464 4.26522 9 4 9C3.73478 9 3.48043 8.89464 3.29289 8.70711C3.10536 8.51957 3 8.26522 3 8V4C3 3.73478 3.10536 3.48043 3.29289 3.29289C3.48043 3.10536 3.73478 3 4 3ZM7 3C7.24493 3.00003 7.48134 3.08996 7.66437 3.25272C7.84741 3.41547 7.96434 3.63975 7.993 3.883L8 4V8C7.99972 8.25488 7.90212 8.50003 7.72715 8.68537C7.55218 8.8707 7.31305 8.98224 7.05861 8.99717C6.80416 9.01211 6.55362 8.92933 6.35817 8.76574C6.16271 8.60215 6.0371 8.3701 6.007 8.117L6 8V4C6 3.73478 6.10536 3.48043 6.29289 3.29289C6.48043 3.10536 6.73478 3 7 3ZM10 3C10.2652 3 10.5196 3.10536 10.7071 3.29289C10.8946 3.48043 11 3.73478 11 4V8C11 8.26522 10.8946 8.51957 10.7071 8.70711C10.5196 8.89464 10.2652 9 10 9C9.73478 9 9.48043 8.89464 9.29289 8.70711C9.10536 8.51957 9 8.26522 9 8V4C9 3.73478 9.10536 3.48043 9.29289 3.29289C9.48043 3.10536 9.73478 3 10 3ZM13 3C13.2449 3.00003 13.4813 3.08996 13.6644 3.25272C13.8474 3.41547 13.9643 3.63975 13.993 3.883L14 4V8C13.9997 8.25488 13.9021 8.50003 13.7272 8.68537C13.5522 8.8707 13.313 8.98224 13.0586 8.99717C12.8042 9.01211 12.5536 8.92933 12.3582 8.76574C12.1627 8.60215 12.0371 8.3701 12.007 8.117L12 8V4C12 3.73478 12.1054 3.48043 12.2929 3.29289C12.4804 3.10536 12.7348 3 13 3Z"
+            fill="white"
+          />
+        </svg>
+      </div>
+      <button class="arrow left">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="38"
+          height="43"
+          viewBox="0 0 160 213"
+          fill="none"
+        >
+          <path
+            d="M154.282 211.786C152.558 212.687 150.62 213.1 148.678 212.98C146.736 212.859 144.863 212.211 143.263 211.105L4.59227 115.253C3.17528 114.273 2.01733 112.964 1.21755 111.44C0.417764 109.915 -3.32715e-06 108.22 -3.32715e-06 106.498C-3.32715e-06 104.777 0.417764 103.082 1.21755 101.557C2.01733 100.033 3.17528 98.7242 4.59227 97.744L143.263 1.89215C144.864 0.786575 146.737 0.139174 148.679 0.0200412C150.621 -0.0990919 152.559 0.314583 154.283 1.21627C156.007 2.11797 157.451 3.47331 158.459 5.13556C159.466 6.79781 159.999 8.70361 160 10.6466V202.35C160 204.294 159.468 206.201 158.46 207.865C157.452 209.528 156.007 210.884 154.282 211.786Z"
+            fill="white"
+          />
+        </svg>
+      </button>
+      <div class="carousel-window">
+        <div class="carousel-track">
+          <div class="img-text">
+            <div class="monsters">
+              <img
+                class="monster-parent monster-1 clickable-transparency"
+                src="img/monster-2.png"
+                alt=""
+              />
+              <img
+                class="monster-parent monster-2 clickable-transparency"
+                src="img/monster-2.png"
+                alt=""
+              />
+              <img
+                class="monster-parent monster-3 clickable-transparency"
+                src="img/monster-2.png"
+                alt=""
+              />
+              <img
+                class="monster-parent monster-4 clickable-transparency"
+                src="img/monster-2.png"
+                alt=""
+              />
+            </div>
+            <img src="img/chambre.png" alt="chambre" />
+            <div class="text">
+              <h3>CAM : 001</h3>
+              <p>Room</p>
+            </div>
+          </div>
+          <div class="img-text">
+            <div class="monsters">
+              <img
+                class="monster-parent monster-1 clickable-transparency"
+                src="img/monster-2.png"
+                alt=""
+              />
+              <img
+                class="monster-parent monster-2 clickable-transparency"
+                src="img/monster-2.png"
+                alt=""
+              />
+              <img
+                class="monster-parent monster-3 clickable-transparency"
+                src="img/monster-2.png"
+                alt=""
+              />
+              <img
+                class="monster-parent monster-4 clickable-transparency"
+                src="img/monster-2.png"
+                alt=""
+              />
+            </div>
+            <img src="img/salon.png" alt="salon" />
+            <div class="text">
+              <h3>CAM : 002</h3>
+              <p>Living Room</p>
+            </div>
+          </div>
+          <div class="img-text">
+            <div class="monsters">
+              <img
+                class="monster-parent monster-1 clickable-transparency"
+                src="img/monster-2.png"
+                alt=""
+              />
+              <img
+                class="monster-parent monster-2 clickable-transparency"
+                src="img/monster-2.png"
+                alt=""
+              />
+              <img
+                class="monster-parent monster-3 clickable-transparency"
+                src="img/monster-2.png"
+                alt=""
+              />
+              <img
+                class="monster-parent monster-4 clickable-transparency"
+                src="img/monster-2.png"
+                alt=""
+              />
+            </div>
+            <img src="img/soussol.png" alt="hall d'entrée" />
+            <div class="text">
+              <h3>CAM : 003</h3>
+              <p>Basement</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="arrow right">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="38"
+          height="43"
+          viewBox="0 0 160 213"
+          fill="none"
+        >
+          <path
+            d="M5.75325 211.786C7.48828 212.687 9.43858 213.1 11.393 212.98C13.3474 212.859 15.2314 212.211 16.8411 211.105L156.379 115.253C157.805 114.273 158.97 112.964 159.775 111.44C160.58 109.915 161 108.22 161 106.498C161 104.777 160.58 103.082 159.775 101.557C158.97 100.033 157.805 98.7242 156.379 97.744L16.8411 1.89215C15.2308 0.786575 13.3464 0.139174 11.3918 0.0200412C9.43725 -0.0990919 7.4871 0.314583 5.7525 1.21627C4.0179 2.11797 2.56495 3.47331 1.55098 5.13556C0.537015 6.79781 0.000661016 8.70361 1.45797e-07 10.6466V202.35C-0.000322734 204.294 0.535644 206.201 1.54981 207.865C2.56397 209.528 4.01764 210.884 5.75325 211.786Z"
+            fill="white"
+          />
+        </svg>
+      </button>
+    </div>
+
+    <div id="game-over" style="display: none">
+      <h1 id="game-over-message"></h1>
+      <div class="button-container">
+        <button id="restart-button"><h2>RETRY</h2></button>
+        <button id="back-button"><h2>BACK</h2></button>
+      </div>
+    </div>
+
+    <script src="js/main.js" type="module"></script>
+  </body>
+</html>

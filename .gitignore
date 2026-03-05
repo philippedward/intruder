@@ -1,0 +1,6 @@
+.DS_Store
+.parcel-cache
+dist
+node_modules
+
+src/sound/noise/static-tv.mp3
