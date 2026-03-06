@@ -34,14 +34,12 @@ let masterVolume = 0.5;
 let musicVolume = 0.5;
 let clickVolume = 0.5;
 let settingsFromFirst = false;
+let sensitivity = 5;
 
 /* =========================
    VOLUME HELPER
-   Tous les setVolume passent par ici pour que le master
-   soit toujours appliqué, quelle que soit la catégorie.
 ========================= */
 
-// Volumes de base "naturels" de chaque son (avant multiplicateurs)
 const BASE_VOLUMES = {
   "ambiance-music": 0.8,
   "first-screen-music": 0.9,
@@ -67,11 +65,7 @@ function getVolume(id) {
   const isClickClass = el.classList.contains("sound-click");
   if (isMusicClass) return Math.min(1, masterVolume * musicVolume * base);
   if (isClickClass) return Math.min(1, masterVolume * clickVolume * base);
-  return Math.min(1, masterVolume * base); // sons sans classe => master only
-}
-
-function setVol(id, el) {
-  if (el) el.volume = getVolume(id);
+  return Math.min(1, masterVolume * base);
 }
 
 function applyVolumes() {
@@ -80,6 +74,67 @@ function applyVolumes() {
     if (el) el.volume = getVolume(id);
   });
 }
+
+/* =========================
+   STOP ALL SOUNDS
+   Stoppe tout SAUF first-screen-music
+========================= */
+
+function stopAllSounds() {
+  document.querySelectorAll("audio:not(#first-screen-music)").forEach((el) => {
+    el.pause();
+    el.currentTime = 0;
+  });
+}
+
+function stopEverything() {
+  clearIntervals();
+  document.querySelectorAll("audio").forEach((el) => {
+    el.pause();
+    el.currentTime = 0;
+  });
+}
+
+/* =========================
+   MUSIQUE PREMIER ECRAN
+========================= */
+
+let firstMusicStarted = false;
+
+function stopFirstScreenMusic() {
+  const music = document.getElementById("first-screen-music");
+  music.pause();
+  music.currentTime = 0;
+}
+
+function playFirstScreenMusic() {
+  const music = document.getElementById("first-screen-music");
+  music.volume = getVolume("first-screen-music");
+  music.play().catch(() => {
+    document.addEventListener(
+      "click",
+      () => {
+        music
+          .play()
+          .catch((err) => console.log("Erreur first-screen-music:", err));
+      },
+      { once: true },
+    );
+  });
+}
+
+document.addEventListener(
+  "click",
+  () => {
+    if (!firstMusicStarted) {
+      firstMusicStarted = true;
+      playFirstScreenMusic();
+    }
+  },
+  { once: true },
+);
+
+playFirstScreenMusic();
 
 /* =========================
    CAROUSEL
@@ -117,301 +172,6 @@ function updateTimer() {
 }
 
 /* =========================
-   FIRST SCREEN
-========================= */
-
-document.getElementById("level-button").addEventListener("click", () => {
-  firstScreen.style.display = "none";
-  startScreen.style.display = "flex";
-});
-
-document.getElementById("back-to-first").addEventListener("click", () => {
-  startScreen.style.display = "none";
-  firstScreen.style.display = "flex";
-});
-
-document
-  .getElementById("setting-button-first")
-  .addEventListener("click", () => {
-    firstScreen.style.display = "none";
-    pauseMenu.style.display = "flex";
-    settingsFromFirst = true;
-    showSettingsMain();
-  });
-
-/* =========================
-   SPAWN DES MONSTRES
-========================= */
-
-function spawnMonster() {
-  const randomRoom = Math.floor(Math.random() * rooms.length);
-  const room = rooms[randomRoom];
-  const monsters = room.querySelectorAll(".monster-parent:not(.visible)");
-  if (monsters.length === 0) return;
-
-  const randomIndex = Math.floor(Math.random() * monsters.length);
-  const monster = monsters[randomIndex];
-
-  monster.classList.add("visible");
-  monster.style.opacity = "1";
-  monsterCount++;
-
-  if (monsterCount >= 4) {
-    endGame(false);
-  }
-}
-
-/* =========================
-   LOADING BAR
-========================= */
-
-const loadingBar = document.createElement("div");
-loadingBar.style.cssText = `
-  position: fixed;
-  pointer-events: none;
-  z-index: 9999;
-  width: 80px;
-  height: 7px;
-  background: rgba(0, 255, 65, 0.2);
-  border: 1px solid rgba(0, 255, 65, 0.4);
-  display: none;
-  overflow: hidden;
-`;
-const loadingFill = document.createElement("div");
-loadingFill.style.cssText = `
-  height: 100%;
-  width: 0%;
-  background: #00ff41;
-  box-shadow: 0 0 6px #00ff41, 0 0 12px rgba(0,255,65,0.5);
-`;
-loadingBar.appendChild(loadingFill);
-document.body.appendChild(loadingBar);
-
-const fakeCrossEl = document.createElement("div");
-fakeCrossEl.style.cssText = `
-  position: fixed;
-  pointer-events: none;
-  z-index: 9999;
-  display: none;
-`;
-fakeCrossEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16">
-  <line x1="2" y1="2" x2="14" y2="14" stroke="red" stroke-width="2.5"/>
-  <line x1="14" y1="2" x2="2" y2="14" stroke="red" stroke-width="2.5"/>
-</svg>`;
-
-document.body.appendChild(fakeCrossEl);
-
-function moveBar(cx, cy) {
-  loadingBar.style.left = cx - 40 + "px";
-  loadingBar.style.top = cy + 35 + "px";
-}
-
-function moveCross(cx, cy) {
-  fakeCrossEl.style.left = cx - 20 + "px";
-  fakeCrossEl.style.top = cy + 35 + "px";
-}
-
-/* =========================
-   LISTENERS MONSTRES
-========================= */
-
-document.querySelectorAll(".monster-parent").forEach((monster) => {
-  let holdTimeout = null;
-  let isHolding = false;
-
-  function cancelHold() {
-    clearTimeout(holdTimeout);
-    holdTimeout = null;
-    isHolding = false;
-    loadingFill.style.transition = "none";
-    loadingFill.style.width = "0%";
-    loadingBar.style.display = "none";
-
-    const loadingSound = document.getElementById("loading-sound");
-    loadingSound.pause();
-    loadingSound.currentTime = 0;
-  }
-
-  monster.addEventListener("mousedown", (e) => {
-    if (e.button !== 0) return;
-    if (!monster.classList.contains("visible")) return;
-    isHolding = true;
-
-    moveBar(e.clientX, e.clientY);
-    loadingBar.style.display = "block";
-    loadingFill.style.transition = "none";
-    loadingFill.style.width = "0%";
-
-    const loadingSound = document.getElementById("loading-sound");
-    loadingSound.currentTime = 0;
-    loadingSound.volume = getVolume("loading-sound");
-    loadingSound
-      .play()
-      .catch((err) => console.log("Erreur loading-sound:", err));
-
-    requestAnimationFrame(() => {
-      loadingFill.style.transition = "width 2000ms linear";
-      loadingFill.style.width = "100%";
-    });
-
-    holdTimeout = setTimeout(() => {
-      if (!isHolding) return;
-      monster.classList.remove("visible");
-      monster.style.opacity = "0";
-      monsterCount--;
-      if (monsterCount < 0) monsterCount = 0;
-
-      carousel.classList.add("screen-glitch");
-
-      const scanEl = document.createElement("div");
-      scanEl.className = "screen-glitch-scan";
-      carousel.appendChild(scanEl);
-
-      const lineEl = document.createElement("div");
-      lineEl.className = "screen-glitch-line";
-      carousel.appendChild(lineEl);
-
-      const glitchVideo = document.createElement("video");
-      glitchVideo.src = "glitch1.mp4";
-      glitchVideo.autoplay = true;
-      glitchVideo.muted = true;
-      glitchVideo.style.cssText = `
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.3;
-  z-index: 102;
-  pointer-events: none;
-`;
-      carousel.appendChild(glitchVideo);
-
-      const glitchSound = document.getElementById("monster-glitch-sound");
-      glitchSound.currentTime = 0;
-      glitchSound.volume = getVolume("monster-glitch-sound");
-      glitchSound.play();
-
-      setTimeout(() => {
-        carousel.classList.remove("screen-glitch");
-        scanEl.remove();
-        lineEl.remove();
-        glitchVideo.remove();
-      }, 2000);
-
-      cancelHold();
-    }, 2000);
-  });
-
-  monster.addEventListener("mousemove", (e) => {
-    moveBar(e.clientX, e.clientY);
-  });
-
-  monster.addEventListener("mouseup", cancelHold);
-  monster.addEventListener("mouseleave", cancelHold);
-});
-
-/* =========================
-   CROIX ROUGE SI CLICK DANS LE VIDE
-========================= */
-
-document.getElementById("carousel").addEventListener("mousedown", (e) => {
-  if (e.button !== 0) return;
-  if (e.target.closest(".monster-parent, button, #timer, .text, .text-battery"))
-    return;
-
-  let cx = e.clientX;
-  let cy = e.clientY;
-  let holdTimeout = null;
-  let isHolding = true;
-
-  moveBar(cx, cy);
-  loadingBar.style.display = "block";
-  loadingFill.style.transition = "none";
-  loadingFill.style.width = "0%";
-
-  const loadingSound = document.getElementById("loading-sound");
-  loadingSound.currentTime = 0;
-  loadingSound.volume = getVolume("loading-sound");
-  loadingSound.play().catch((err) => console.log("Erreur loading-sound:", err));
-
-  requestAnimationFrame(() => {
-    loadingFill.style.transition = "width 2000ms linear";
-    loadingFill.style.width = "100%";
-  });
-
-  function onMove(ev) {
-    cx = ev.clientX;
-    cy = ev.clientY;
-    moveBar(cx, cy);
-  }
-
-  function onUp() {
-    if (!isHolding) return;
-    isHolding = false;
-    clearTimeout(holdTimeout);
-    loadingFill.style.transition = "none";
-    loadingFill.style.width = "0%";
-    loadingBar.style.display = "none";
-
-    const loadingSound = document.getElementById("loading-sound");
-    loadingSound.pause();
-    loadingSound.currentTime = 0;
-
-    document.removeEventListener("mouseup", onUp);
-    document.removeEventListener("mousemove", onMove);
-  }
-
-  document.addEventListener("mousemove", onMove);
-  document.addEventListener("mouseup", onUp);
-
-  holdTimeout = setTimeout(() => {
-    if (!isHolding) return;
-    isHolding = false;
-    loadingFill.style.transition = "none";
-    loadingFill.style.width = "0%";
-    loadingBar.style.display = "none";
-
-    loadingSound.pause();
-    loadingSound.currentTime = 0;
-
-    const missedSound = document.getElementById("missed-sound");
-    missedSound.currentTime = 0;
-    missedSound.volume = getVolume("missed-sound");
-    missedSound.play().catch((err) => console.log("Erreur missed-sound:", err));
-
-    document.body.classList.add("cursor-locked");
-
-    const shakeCross = document.createElement("div");
-    shakeCross.style.cssText = `
-  position: fixed;
-  pointer-events: none;
-  z-index: 9999;
-  left: ${cx - 10}px;
-  top: ${cy - 10}px;
-`;
-    shakeCross.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16">
-  <line x1="2" y1="2" x2="14" y2="14" stroke="red" stroke-width="2.5"/>
-  <line x1="14" y1="2" x2="2" y2="14" stroke="red" stroke-width="2.5"/>
-</svg>`;
-    shakeCross.classList.add("cross-visible");
-    document.body.appendChild(shakeCross);
-
-    function followMouse(ev) {
-      shakeCross.style.left = ev.clientX - 10 + "px";
-      shakeCross.style.top = ev.clientY - 10 + "px";
-    }
-    document.addEventListener("mousemove", followMouse);
-
-    setTimeout(() => {
-      shakeCross.remove();
-      document.body.classList.remove("cursor-locked");
-      document.removeEventListener("mousemove", followMouse);
-    }, 800);
-  }, 2000);
-});
-
-/* =========================
    GESTION DES INTERVALS
 ========================= */
 
@@ -442,6 +202,28 @@ function startIntervals() {
   }
 
   doorInterval = setInterval(playRandomDoor, 25000);
+}
+
+/* =========================
+   SPAWN DES MONSTRES
+========================= */
+
+function spawnMonster() {
+  const randomRoom = Math.floor(Math.random() * rooms.length);
+  const room = rooms[randomRoom];
+  const monsters = room.querySelectorAll(".monster-parent:not(.visible)");
+  if (monsters.length === 0) return;
+
+  const randomIndex = Math.floor(Math.random() * monsters.length);
+  const monster = monsters[randomIndex];
+
+  monster.classList.add("visible");
+  monster.style.opacity = "1";
+  monsterCount++;
+
+  if (monsterCount >= 4) {
+    endGame(false);
+  }
 }
 
 /* =========================
@@ -496,62 +278,227 @@ function createBlackout(fadeIn, callback) {
 }
 
 /* =========================
-   STOP ALL SOUNDS HELPER
+   LOADING BAR
 ========================= */
 
-function stopFirstScreenMusic() {
-  const music = document.getElementById("first-screen-music");
-  music.pause();
-  music.currentTime = 0;
+const loadingBar = document.createElement("div");
+loadingBar.style.cssText = `
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  width: 80px;
+  height: 7px;
+  background: rgba(0, 255, 65, 0.2);
+  border: 1px solid rgba(0, 255, 65, 0.4);
+  display: none;
+  overflow: hidden;
+`;
+const loadingFill = document.createElement("div");
+loadingFill.style.cssText = `
+  height: 100%;
+  width: 0%;
+  background: #00ff41;
+  box-shadow: 0 0 6px #00ff41, 0 0 12px rgba(0,255,65,0.5);
+`;
+loadingBar.appendChild(loadingFill);
+document.body.appendChild(loadingBar);
+
+function moveBar(cx, cy) {
+  loadingBar.style.left = cx - 40 + "px";
+  loadingBar.style.top = cy + 35 + "px";
 }
 
-function playFirstScreenMusic() {
-  const music = document.getElementById("first-screen-music");
-  music.volume = getVolume("first-screen-music");
-  music.play().catch(() => {
-    document.addEventListener(
-      "click",
-      () => {
-        music
-          .play()
-          .catch((err) => console.log("Erreur first-screen-music:", err));
-      },
-      { once: true },
-    );
+/* =========================
+   LISTENERS MONSTRES
+========================= */
+
+document.querySelectorAll(".monster-parent").forEach((monster) => {
+  let holdTimeout = null;
+  let isHolding = false;
+
+  function cancelHold() {
+    clearTimeout(holdTimeout);
+    holdTimeout = null;
+    isHolding = false;
+    loadingFill.style.transition = "none";
+    loadingFill.style.width = "0%";
+    loadingBar.style.display = "none";
+    const loadingSound = document.getElementById("loading-sound");
+    loadingSound.pause();
+    loadingSound.currentTime = 0;
+  }
+
+  monster.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return;
+    if (!monster.classList.contains("visible")) return;
+    isHolding = true;
+
+    moveBar(e.clientX, e.clientY);
+    loadingBar.style.display = "block";
+    loadingFill.style.transition = "none";
+    loadingFill.style.width = "0%";
+
+    const loadingSound = document.getElementById("loading-sound");
+    loadingSound.currentTime = 0;
+    loadingSound.volume = getVolume("loading-sound");
+    loadingSound
+      .play()
+      .catch((err) => console.log("Erreur loading-sound:", err));
+
+    requestAnimationFrame(() => {
+      loadingFill.style.transition = "width 2000ms linear";
+      loadingFill.style.width = "100%";
+    });
+
+    holdTimeout = setTimeout(() => {
+      if (!isHolding) return;
+      monster.classList.remove("visible");
+      monster.style.opacity = "0";
+      monsterCount--;
+      if (monsterCount < 0) monsterCount = 0;
+
+      carousel.classList.add("screen-glitch");
+
+      const scanEl = document.createElement("div");
+      scanEl.className = "screen-glitch-scan";
+      carousel.appendChild(scanEl);
+
+      const lineEl = document.createElement("div");
+      lineEl.className = "screen-glitch-line";
+      carousel.appendChild(lineEl);
+
+      const glitchVideo = document.createElement("video");
+      glitchVideo.src = "glitch1.mp4";
+      glitchVideo.autoplay = true;
+      glitchVideo.muted = true;
+      glitchVideo.style.cssText = `
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.3;
+        z-index: 102;
+        pointer-events: none;
+      `;
+      carousel.appendChild(glitchVideo);
+
+      const glitchSound = document.getElementById("monster-glitch-sound");
+      glitchSound.currentTime = 0;
+      glitchSound.volume = getVolume("monster-glitch-sound");
+      glitchSound.play();
+
+      setTimeout(() => {
+        carousel.classList.remove("screen-glitch");
+        scanEl.remove();
+        lineEl.remove();
+        glitchVideo.remove();
+      }, 2000);
+
+      cancelHold();
+    }, 2000);
   });
-}
 
-let firstMusicStarted = false;
-document.addEventListener(
-  "click",
-  () => {
-    if (!firstMusicStarted) {
-      firstMusicStarted = true;
-      playFirstScreenMusic();
-    }
-  },
-  { once: true },
-);
+  monster.addEventListener("mousemove", (e) => moveBar(e.clientX, e.clientY));
+  monster.addEventListener("mouseup", cancelHold);
+  monster.addEventListener("mouseleave", cancelHold);
+});
 
-function stopAllSounds() {
-  const ids = [
-    "ambiance-music",
-    "time-sound",
-    "dead-sound",
-    "iiii-sound",
-    "loading-sound",
-    "missed-sound",
-  ];
-  ids.forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.pause();
-      el.currentTime = 0;
-    }
+/* =========================
+   CROIX ROUGE SI CLICK DANS LE VIDE
+========================= */
+
+document.getElementById("carousel").addEventListener("mousedown", (e) => {
+  if (e.button !== 0) return;
+  if (e.target.closest(".monster-parent, button, #timer, .text, .text-battery"))
+    return;
+
+  let cx = e.clientX;
+  let cy = e.clientY;
+  let holdTimeout = null;
+  let isHolding = true;
+
+  moveBar(cx, cy);
+  loadingBar.style.display = "block";
+  loadingFill.style.transition = "none";
+  loadingFill.style.width = "0%";
+
+  const loadingSound = document.getElementById("loading-sound");
+  loadingSound.currentTime = 0;
+  loadingSound.volume = getVolume("loading-sound");
+  loadingSound.play().catch((err) => console.log("Erreur loading-sound:", err));
+
+  requestAnimationFrame(() => {
+    loadingFill.style.transition = "width 2000ms linear";
+    loadingFill.style.width = "100%";
   });
-}
 
-playFirstScreenMusic();
+  function onMove(ev) {
+    cx = ev.clientX;
+    cy = ev.clientY;
+    moveBar(cx, cy);
+  }
+
+  function onUp() {
+    if (!isHolding) return;
+    isHolding = false;
+    clearTimeout(holdTimeout);
+    loadingFill.style.transition = "none";
+    loadingFill.style.width = "0%";
+    loadingBar.style.display = "none";
+    loadingSound.pause();
+    loadingSound.currentTime = 0;
+    document.removeEventListener("mouseup", onUp);
+    document.removeEventListener("mousemove", onMove);
+  }
+
+  document.addEventListener("mousemove", onMove);
+  document.addEventListener("mouseup", onUp);
+
+  holdTimeout = setTimeout(() => {
+    if (!isHolding) return;
+    isHolding = false;
+    loadingFill.style.transition = "none";
+    loadingFill.style.width = "0%";
+    loadingBar.style.display = "none";
+    loadingSound.pause();
+    loadingSound.currentTime = 0;
+
+    const missedSound = document.getElementById("missed-sound");
+    missedSound.currentTime = 0;
+    missedSound.volume = getVolume("missed-sound");
+    missedSound.play().catch((err) => console.log("Erreur missed-sound:", err));
+
+    document.body.classList.add("cursor-locked");
+
+    const shakeCross = document.createElement("div");
+    shakeCross.style.cssText = `
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      left: ${cx - 10}px;
+      top: ${cy - 10}px;
+    `;
+    shakeCross.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16">
+      <line x1="2" y1="2" x2="14" y2="14" stroke="red" stroke-width="2.5"/>
+      <line x1="14" y1="2" x2="2" y2="14" stroke="red" stroke-width="2.5"/>
+    </svg>`;
+    shakeCross.classList.add("cross-visible");
+    document.body.appendChild(shakeCross);
+
+    function followMouse(ev) {
+      shakeCross.style.left = ev.clientX - 10 + "px";
+      shakeCross.style.top = ev.clientY - 10 + "px";
+    }
+    document.addEventListener("mousemove", followMouse);
+
+    setTimeout(() => {
+      shakeCross.remove();
+      document.body.classList.remove("cursor-locked");
+      document.removeEventListener("mousemove", followMouse);
+    }, 800);
+  }, 2000);
+});
 
 /* =========================
    LOGIQUE DE JEU
@@ -577,9 +524,7 @@ function startGame() {
     .catch((err) => console.log("Erreur ambiance-music:", err));
 
   clearIntervals();
-
   document.getElementById("how-to-play").style.display = "flex";
-
   createBlackout(false);
 }
 
@@ -592,16 +537,13 @@ function pauseGame() {
   clearIntervals();
   pauseMenu.style.display = "flex";
   menuButton.style.display = "none";
-
-  const ambianceMusic = document.getElementById("ambiance-music");
-  ambianceMusic.pause();
+  document.getElementById("ambiance-music").pause();
 }
 
 function resumeGame() {
   pauseMenu.style.display = "none";
   menuButton.style.display = "block";
   startIntervals();
-
   const ambianceMusic = document.getElementById("ambiance-music");
   ambianceMusic.volume = getVolume("ambiance-music");
   ambianceMusic.play();
@@ -629,12 +571,12 @@ function endGame(won) {
       gameOverScreen.style.display = "flex";
       menuButton.style.display = "none";
       gameOverMessage.innerHTML = "FAILED...";
-      resetSettings();
     });
 
     return;
   }
 
+  // Victoire : sons lancés EN PREMIER, resetSettings après
   createBlackout(true, () => {
     carousel.style.display = "none";
     pauseMenu.style.display = "none";
@@ -652,9 +594,6 @@ function endGame(won) {
     winSound.currentTime = 0;
     winSound.volume = getVolume("win-sound");
     winSound.play().catch((err) => console.log("Erreur win-sound:", err));
-
-    // resetSettings appelé APRÈS pour ne pas écraser le volume des sons win
-    resetSettings();
   });
 }
 
@@ -681,9 +620,7 @@ function resetSettings() {
   sensitivity = 5;
   document.getElementById("sensitivity-slider").value = 5;
   document.getElementById("sensitivity-value").textContent = "5";
-
-  // On ne rappelle PAS applyVolumes() ici pour ne pas couper
-  // les sons en cours (win, dead) au moment du game over.
+  // Pas d'applyVolumes() ici — ne pas couper les sons en cours
 }
 
 function resetGame() {
@@ -715,13 +652,12 @@ function resetGame() {
 
   clearIntervals();
   startIntervals();
-
   createBlackout(false);
 }
 
 function backToMenu() {
   clearIntervals();
-  stopAllSounds();
+  stopAllSounds(); // stoppe TOUT sauf first-screen-music
 
   index = 0;
   timeLeft = 120;
@@ -744,64 +680,34 @@ function backToMenu() {
   menuButton.style.display = "none";
 
   resetSettings();
-  playFirstScreenMusic();
+  playFirstScreenMusic(); // reprend la musique du menu
 }
 
 /* =========================
-   FAUX CURSEUR "X" ROUGE
+   NAVIGATION PREMIER ECRAN
 ========================= */
 
-const fakeCursor = document.createElement("div");
-fakeCursor.style.cssText = `
-  position: fixed;
-  pointer-events: none;
-  z-index: 9999;
-  display: none;
-  width: 60px;
-  height: 60px;
-`;
-
-fakeCursor.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16">
-  <line x1="2" y1="2" x2="14" y2="14" stroke="red" stroke-width="2.5"/>
-  <line x1="14" y1="2" x2="2" y2="14" stroke="red" stroke-width="2.5"/>
-</svg>`;
-
-document.body.appendChild(fakeCursor);
-
-let shakeFrame = null;
-let mouseX = 0,
-  mouseY = 0;
-
-document.querySelectorAll("button[disabled]").forEach((btn) => {
-  btn.addEventListener("mouseenter", () => {
-    fakeCursor.style.display = "block";
-    let t = 0;
-
-    function animateShake() {
-      const dx = Math.sin(t * 0.8) * 4;
-      const dy = Math.cos(t * 1.1) * 3;
-      fakeCursor.style.left = mouseX + dx - 8 + "px";
-      fakeCursor.style.top = mouseY + dy - 8 + "px";
-      t += 0.4;
-      shakeFrame = requestAnimationFrame(animateShake);
-    }
-
-    animateShake();
-  });
-
-  btn.addEventListener("mouseleave", () => {
-    fakeCursor.style.display = "none";
-    cancelAnimationFrame(shakeFrame);
-  });
+document.getElementById("level-button").addEventListener("click", () => {
+  firstScreen.style.display = "none";
+  startScreen.style.display = "flex";
 });
 
-document.addEventListener("mousemove", (e) => {
-  mouseX = e.clientX;
-  mouseY = e.clientY;
+document.getElementById("back-to-first").addEventListener("click", () => {
+  startScreen.style.display = "none";
+  firstScreen.style.display = "flex";
 });
+
+document
+  .getElementById("setting-button-first")
+  .addEventListener("click", () => {
+    firstScreen.style.display = "none";
+    pauseMenu.style.display = "flex";
+    settingsFromFirst = true;
+    showSettingsMain();
+  });
 
 /* =========================
-   BOUTONS & DIFFICULTÉ
+   BOUTONS PRINCIPAUX
 ========================= */
 
 menuButton.addEventListener("click", pauseGame);
@@ -814,13 +720,60 @@ difficultyButtons.forEach((button) => {
   if (button.getAttribute("data-difficulty") === "hard") {
     button.disabled = true;
   }
-
   button.addEventListener("click", () => {
     if (button.getAttribute("data-difficulty") === "normal") {
-      startGame();
       stopFirstScreenMusic();
+      startGame();
     }
   });
+});
+
+/* =========================
+   FAUX CURSEUR (boutons disabled)
+========================= */
+
+const fakeCursor = document.createElement("div");
+fakeCursor.style.cssText = `
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  display: none;
+  width: 60px;
+  height: 60px;
+`;
+fakeCursor.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16">
+  <line x1="2" y1="2" x2="14" y2="14" stroke="red" stroke-width="2.5"/>
+  <line x1="14" y1="2" x2="2" y2="14" stroke="red" stroke-width="2.5"/>
+</svg>`;
+document.body.appendChild(fakeCursor);
+
+let shakeFrame = null;
+let mouseX = 0;
+let mouseY = 0;
+
+document.querySelectorAll("button[disabled]").forEach((btn) => {
+  btn.addEventListener("mouseenter", () => {
+    fakeCursor.style.display = "block";
+    let t = 0;
+    function animateShake() {
+      const dx = Math.sin(t * 0.8) * 4;
+      const dy = Math.cos(t * 1.1) * 3;
+      fakeCursor.style.left = mouseX + dx - 8 + "px";
+      fakeCursor.style.top = mouseY + dy - 8 + "px";
+      t += 0.4;
+      shakeFrame = requestAnimationFrame(animateShake);
+    }
+    animateShake();
+  });
+  btn.addEventListener("mouseleave", () => {
+    fakeCursor.style.display = "none";
+    cancelAnimationFrame(shakeFrame);
+  });
+});
+
+document.addEventListener("mousemove", (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
 });
 
 /* =========================
@@ -874,7 +827,6 @@ document.getElementById("setting-button").addEventListener("click", () => {
   settingsFromFirst = false;
   showSettingsMain();
 });
-
 document
   .getElementById("settings-back")
   .addEventListener("click", showPauseMain);
@@ -887,10 +839,13 @@ document
 document
   .getElementById("btn-controls")
   .addEventListener("click", () => showPanel(panelControls, "CONTROL"));
-
 document.querySelectorAll(".panel-back").forEach((btn) => {
   btn.addEventListener("click", showSettingsMain);
 });
+
+/* =========================
+   SLIDERS SETTINGS
+========================= */
 
 document.getElementById("brightness-slider").addEventListener("input", (e) => {
   document
@@ -902,75 +857,10 @@ document.getElementById("brightness-slider").addEventListener("input", (e) => {
     e.target.value + "%";
 });
 
-let sensitivity = 5;
 document.getElementById("sensitivity-slider").addEventListener("input", (e) => {
   sensitivity = parseInt(e.target.value);
   document.getElementById("sensitivity-value").textContent = sensitivity;
 });
-
-/* =========================
-   LEFT CLICK DISABLE
-========================= */
-
-document.addEventListener("contextmenu", (e) => e.preventDefault());
-document.addEventListener("mousedown", (e) => {
-  if (e.button === 2) e.preventDefault();
-});
-document.addEventListener("mouseup", (e) => {
-  if (e.button === 2) e.preventDefault();
-});
-
-/* =========================
-   SOUND DESIGN - HOVER BUTTONS
-========================= */
-
-const hoverSound = document.getElementById("hover-sound");
-hoverSound.volume = getVolume("hover-sound");
-
-document
-  .querySelectorAll("button:not([disabled]):not(.arrow)")
-  .forEach((button) => {
-    let hasPlayed = false;
-
-    button.addEventListener("mouseenter", () => {
-      if (hasPlayed) return;
-      hoverSound.currentTime = 0;
-      hoverSound.volume = getVolume("hover-sound");
-      hoverSound.play();
-      hasPlayed = true;
-    });
-
-    button.addEventListener("mouseleave", () => {
-      hasPlayed = false;
-    });
-  });
-
-/* =========================
-   SOUND DESIGN - CLICK ARROWS
-========================= */
-
-const cameraSound = document.getElementById("camera-sound");
-cameraSound.volume = getVolume("camera-sound");
-
-btnRight.addEventListener("click", () => {
-  index = (index + 1) % rooms.length;
-  updateCarousel();
-  cameraSound.currentTime = 0;
-  cameraSound.volume = getVolume("camera-sound");
-  cameraSound.play();
-});
-
-btnLeft.addEventListener("click", () => {
-  index = (index - 1 + rooms.length) % rooms.length;
-  updateCarousel();
-  cameraSound.currentTime = 0;
-  cameraSound.volume = getVolume("camera-sound");
-  cameraSound.play();
-});
-
-/* =========================
-   VOLUME CONTROLS
-========================= */
 
 document.getElementById("master-slider").addEventListener("input", (e) => {
   masterVolume = e.target.value / 100;
@@ -991,22 +881,75 @@ document.getElementById("click-slider").addEventListener("input", (e) => {
 });
 
 document.querySelectorAll("input[type='range']").forEach((slider) => {
-  slider.addEventListener("mousedown", () => {
-    slider.classList.add("dragging");
-  });
-  document.addEventListener("mouseup", () => {
-    slider.classList.remove("dragging");
-  });
+  slider.addEventListener("mousedown", () => slider.classList.add("dragging"));
+  document.addEventListener("mouseup", () =>
+    slider.classList.remove("dragging"),
+  );
 });
 
 /* =========================
-   EYE FOLLOW MOUSE
+   SOUND - HOVER BOUTONS
+========================= */
+
+const hoverSound = document.getElementById("hover-sound");
+
+document
+  .querySelectorAll("button:not([disabled]):not(.arrow)")
+  .forEach((button) => {
+    let hasPlayed = false;
+    button.addEventListener("mouseenter", () => {
+      if (hasPlayed) return;
+      hoverSound.currentTime = 0;
+      hoverSound.volume = getVolume("hover-sound");
+      hoverSound.play();
+      hasPlayed = true;
+    });
+    button.addEventListener("mouseleave", () => {
+      hasPlayed = false;
+    });
+  });
+
+/* =========================
+   SOUND - FLECHES CAMERA
+========================= */
+
+const cameraSound = document.getElementById("camera-sound");
+
+btnRight.addEventListener("click", () => {
+  index = (index + 1) % rooms.length;
+  updateCarousel();
+  cameraSound.currentTime = 0;
+  cameraSound.volume = getVolume("camera-sound");
+  cameraSound.play();
+});
+
+btnLeft.addEventListener("click", () => {
+  index = (index - 1 + rooms.length) % rooms.length;
+  updateCarousel();
+  cameraSound.currentTime = 0;
+  cameraSound.volume = getVolume("camera-sound");
+  cameraSound.play();
+});
+
+/* =========================
+   DESACTIVER CLIC DROIT
+========================= */
+
+document.addEventListener("contextmenu", (e) => e.preventDefault());
+document.addEventListener("mousedown", (e) => {
+  if (e.button === 2) e.preventDefault();
+});
+document.addEventListener("mouseup", (e) => {
+  if (e.button === 2) e.preventDefault();
+});
+
+/* =========================
+   OEIL QUI SUIT LA SOURIS
 ========================= */
 
 const eyeInside = document.querySelector(".insdie");
 const eyeOutside = document.querySelector(".outside");
 const videoAnimation = document.querySelector(".image-animation");
-
 let eyeIdleTimeout = null;
 
 document.addEventListener("mousemove", (e) => {
@@ -1019,12 +962,10 @@ document.addEventListener("mousemove", (e) => {
   const rect = eyeOutside.getBoundingClientRect();
   const centerX = rect.left + rect.width / 2;
   const centerY = rect.top + rect.height / 2;
-
   const dx = e.clientX - centerX;
   const dy = e.clientY - centerY;
   const angle = Math.atan2(dy, dx);
   const maxDist = rect.width * 0.1;
-
   const x = Math.cos(angle) * maxDist;
   const y = Math.sin(angle) * maxDist;
 
@@ -1039,46 +980,44 @@ document.addEventListener("mousemove", (e) => {
 });
 
 /* =========================
-   STOP SONS QUAND ON QUITTE LA PAGE
+   STOP SONS A LA FERMETURE
 ========================= */
 
-function stopEverything() {
-  clearIntervals();
-  document.querySelectorAll("audio").forEach((audio) => {
-    audio.pause();
-    audio.currentTime = 0;
-  });
-}
-
-// Fermeture / rechargement de l'onglet
 window.addEventListener("pagehide", stopEverything);
 window.addEventListener("beforeunload", stopEverything);
 
-// Changement d'onglet (minimize, alt+tab, etc.)
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     document.querySelectorAll("audio").forEach((audio) => audio.pause());
   } else {
-    // Reprend uniquement les sons qui étaient en lecture
-    const ambianceMusic = document.getElementById("ambiance-music");
-    const firstMusic = document.getElementById("first-screen-music");
-    const winSound = document.getElementById("win-sound");
-    const wiinSound = document.getElementById("wiiin-sound");
-    const deadSound = document.getElementById("dead-sound");
-
     if (
       carousel.style.display !== "none" &&
       pauseMenu.style.display === "none"
     ) {
-      ambianceMusic.play().catch(() => {});
+      document
+        .getElementById("ambiance-music")
+        .play()
+        .catch(() => {});
     }
     if (firstScreen.style.display !== "none") {
-      firstMusic.play().catch(() => {});
+      document
+        .getElementById("first-screen-music")
+        .play()
+        .catch(() => {});
     }
     if (gameOverScreen.style.display !== "none") {
-      winSound.play().catch(() => {});
-      wiinSound.play().catch(() => {});
-      deadSound.play().catch(() => {});
+      document
+        .getElementById("win-sound")
+        .play()
+        .catch(() => {});
+      document
+        .getElementById("wiiin-sound")
+        .play()
+        .catch(() => {});
+      document
+        .getElementById("dead-sound")
+        .play()
+        .catch(() => {});
     }
   }
 });
