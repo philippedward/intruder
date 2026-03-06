@@ -1246,7 +1246,7 @@ button[disabled]:hover {
 
 .follow-mouse {
   position: relative;
-  width: 100%;
+  width: 38%;
 }
 
 .outside {
@@ -1270,9 +1270,10 @@ button[disabled]:hover {
 
 .image-animation {
   position: absolute;
-  top: 8.5%;
-  right: 20.5%;
-  width: 47.5%;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   z-index: 3;
   opacity: 0;

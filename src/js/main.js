@@ -36,6 +36,52 @@ let clickVolume = 0.5;
 let settingsFromFirst = false;
 
 /* =========================
+   VOLUME HELPER
+   Tous les setVolume passent par ici pour que le master
+   soit toujours appliqué, quelle que soit la catégorie.
+========================= */
+
+// Volumes de base "naturels" de chaque son (avant multiplicateurs)
+const BASE_VOLUMES = {
+  "ambiance-music": 0.5,
+  "first-screen-music": 0.5,
+  "win-sound": 0.4,
+  "wiiin-sound": 0.2,
+  "dead-sound": 0.8,
+  "iiii-sound": 0.2,
+  "time-sound": 0.8,
+  "monster-glitch-sound": 0.6,
+  "r-door-sound": 0.8,
+  "l-door-sound": 0.8,
+  "hover-sound": 0.5,
+  "camera-sound": 0.4,
+  "missed-sound": 0.3,
+  "loading-sound": 0.2,
+};
+
+function getVolume(id) {
+  const base = BASE_VOLUMES[id] ?? 0.5;
+  const el = document.getElementById(id);
+  if (!el) return 0;
+  const isMusicClass = el.classList.contains("sound-music");
+  const isClickClass = el.classList.contains("sound-click");
+  if (isMusicClass) return Math.min(1, masterVolume * musicVolume * base);
+  if (isClickClass) return Math.min(1, masterVolume * clickVolume * base);
+  return Math.min(1, masterVolume * base); // sons sans classe => master only
+}
+
+function setVol(id, el) {
+  if (el) el.volume = getVolume(id);
+}
+
+function applyVolumes() {
+  Object.keys(BASE_VOLUMES).forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.volume = getVolume(id);
+  });
+}
+
+/* =========================
    CAROUSEL
 ========================= */
 
@@ -58,7 +104,7 @@ function updateTimer() {
   if (timeLeft <= 30 && !timeAlertPlayed) {
     const timeSound = document.getElementById("time-sound");
     timeSound.currentTime = 0;
-    timeSound.volume = 0.4;
+    timeSound.volume = getVolume("time-sound");
     timeSound.play().catch((err) => console.log("Erreur time-sound:", err));
     timeAlertPlayed = true;
   }
@@ -198,7 +244,7 @@ document.querySelectorAll(".monster-parent").forEach((monster) => {
 
     const loadingSound = document.getElementById("loading-sound");
     loadingSound.currentTime = 0;
-    loadingSound.volume = 0.1;
+    loadingSound.volume = getVolume("loading-sound");
     loadingSound
       .play()
       .catch((err) => console.log("Erreur loading-sound:", err));
@@ -243,7 +289,7 @@ document.querySelectorAll(".monster-parent").forEach((monster) => {
 
       const glitchSound = document.getElementById("monster-glitch-sound");
       glitchSound.currentTime = 0;
-      glitchSound.volume = 0.3;
+      glitchSound.volume = getVolume("monster-glitch-sound");
       glitchSound.play();
 
       setTimeout(() => {
@@ -286,7 +332,7 @@ document.getElementById("carousel").addEventListener("mousedown", (e) => {
 
   const loadingSound = document.getElementById("loading-sound");
   loadingSound.currentTime = 0;
-  loadingSound.volume = 0.1;
+  loadingSound.volume = getVolume("loading-sound");
   loadingSound.play().catch((err) => console.log("Erreur loading-sound:", err));
 
   requestAnimationFrame(() => {
@@ -331,7 +377,7 @@ document.getElementById("carousel").addEventListener("mousedown", (e) => {
 
     const missedSound = document.getElementById("missed-sound");
     missedSound.currentTime = 0;
-    missedSound.volume = 0.15;
+    missedSound.volume = getVolume("missed-sound");
     missedSound.play().catch((err) => console.log("Erreur missed-sound:", err));
 
     document.body.classList.add("cursor-locked");
@@ -390,7 +436,7 @@ function startIntervals() {
     const randomId = pool[Math.floor(Math.random() * pool.length)];
     const sound = document.getElementById(randomId);
     sound.currentTime = 0;
-    sound.volume = 0.4;
+    sound.volume = getVolume(randomId);
     sound.play().catch((err) => console.log("Erreur door-sound:", err));
     doorPlayCount[randomId]++;
   }
@@ -461,9 +507,8 @@ function stopFirstScreenMusic() {
 
 function playFirstScreenMusic() {
   const music = document.getElementById("first-screen-music");
-  music.volume = 0.25;
+  music.volume = getVolume("first-screen-music");
   music.play().catch(() => {
-    // Autoplay bloqué, on attend le premier clic
     document.addEventListener(
       "click",
       () => {
@@ -494,10 +539,8 @@ function stopAllSounds() {
     "time-sound",
     "dead-sound",
     "iiii-sound",
-    "win-sound",
     "loading-sound",
     "missed-sound",
-    "wiiin-sound",
   ];
   ids.forEach((id) => {
     const el = document.getElementById(id);
@@ -527,7 +570,7 @@ function startGame() {
   timeAlertPlayed = false;
 
   const ambianceMusic = document.getElementById("ambiance-music");
-  ambianceMusic.volume = 0.25;
+  ambianceMusic.volume = getVolume("ambiance-music");
   ambianceMusic.currentTime = 0;
   ambianceMusic
     .play()
@@ -560,6 +603,7 @@ function resumeGame() {
   startIntervals();
 
   const ambianceMusic = document.getElementById("ambiance-music");
+  ambianceMusic.volume = getVolume("ambiance-music");
   ambianceMusic.play();
 }
 
@@ -572,11 +616,11 @@ function endGame(won) {
     const iiiiSound = document.getElementById("iiii-sound");
 
     iiiiSound.currentTime = 0;
-    iiiiSound.volume = 0.1;
+    iiiiSound.volume = getVolume("iiii-sound");
     iiiiSound.play().catch((err) => console.log("Erreur iiii-sound:", err));
 
     deadSound.currentTime = 0;
-    deadSound.volume = 0.4;
+    deadSound.volume = getVolume("dead-sound");
     deadSound.play().catch((err) => console.log("Erreur dead-sound:", err));
 
     createBlackout(true, () => {
@@ -597,19 +641,49 @@ function endGame(won) {
     gameOverScreen.style.display = "flex";
     menuButton.style.display = "none";
     gameOverMessage.innerHTML = `It's Gone... <span class="for-now-glow">For Now</span>`;
-    resetSettings();
 
     const winSound = document.getElementById("win-sound");
     const iiiiWin = document.getElementById("wiiin-sound");
 
     iiiiWin.currentTime = 0;
-    iiiiWin.volume = 0.1;
+    iiiiWin.volume = getVolume("wiiin-sound");
     iiiiWin.play().catch((err) => console.log("Erreur wiiin-sound:", err));
 
     winSound.currentTime = 0;
-    winSound.volume = 0.2;
+    winSound.volume = getVolume("win-sound");
     winSound.play().catch((err) => console.log("Erreur win-sound:", err));
+
+    // resetSettings appelé APRÈS pour ne pas écraser le volume des sons win
+    resetSettings();
   });
+}
+
+function resetSettings() {
+  masterVolume = 0.5;
+  musicVolume = 0.5;
+  clickVolume = 0.5;
+
+  document.getElementById("master-slider").value = 50;
+  document.getElementById("music-slider").value = 50;
+  document.getElementById("click-slider").value = 50;
+  document.getElementById("master-value").textContent = "50%";
+  document.getElementById("music-value").textContent = "50%";
+  document.getElementById("click-value").textContent = "50%";
+
+  document.getElementById("brightness-slider").value = 50;
+  document.getElementById("brightness-value").textContent = "50%";
+  document
+    .querySelectorAll(".carousel-track img:not(.monster-parent)")
+    .forEach((img) => {
+      img.style.filter = "brightness(1)";
+    });
+
+  sensitivity = 5;
+  document.getElementById("sensitivity-slider").value = 5;
+  document.getElementById("sensitivity-value").textContent = "5";
+
+  // On ne rappelle PAS applyVolumes() ici pour ne pas couper
+  // les sons en cours (win, dead) au moment du game over.
 }
 
 function resetGame() {
@@ -633,7 +707,7 @@ function resetGame() {
   menuButton.style.display = "block";
 
   const ambianceMusic = document.getElementById("ambiance-music");
-  ambianceMusic.volume = 0.25;
+  ambianceMusic.volume = getVolume("ambiance-music");
   ambianceMusic.currentTime = 0;
   ambianceMusic
     .play()
@@ -648,38 +722,6 @@ function resetGame() {
 function backToMenu() {
   clearIntervals();
   stopAllSounds();
-
-  function resetSettings() {
-    masterVolume = 0.5;
-    musicVolume = 0.5;
-    clickVolume = 0.5;
-
-    document.getElementById("master-slider").value = 50;
-    document.getElementById("music-slider").value = 50;
-    document.getElementById("click-slider").value = 50;
-    document.getElementById("master-value").textContent = "50%";
-    document.getElementById("music-value").textContent = "50%";
-    document.getElementById("click-value").textContent = "50%";
-
-    document.getElementById("brightness-slider").value = 50;
-    document.getElementById("brightness-value").textContent = "50%";
-    document
-      .querySelectorAll(".carousel-track img:not(.monster-parent)")
-      .forEach((img) => {
-        img.style.filter = "brightness(1)";
-      });
-
-    sensitivity = 5;
-    document.getElementById("sensitivity-slider").value = 5;
-    document.getElementById("sensitivity-value").textContent = "5";
-
-    applyVolumes();
-  }
-
-  function backToMenu() {
-    clearIntervals();
-    stopAllSounds();
-  }
 
   index = 0;
   timeLeft = 120;
@@ -883,7 +925,7 @@ document.addEventListener("mouseup", (e) => {
 ========================= */
 
 const hoverSound = document.getElementById("hover-sound");
-hoverSound.volume = 0.25;
+hoverSound.volume = getVolume("hover-sound");
 
 document
   .querySelectorAll("button:not([disabled]):not(.arrow)")
@@ -893,6 +935,7 @@ document
     button.addEventListener("mouseenter", () => {
       if (hasPlayed) return;
       hoverSound.currentTime = 0;
+      hoverSound.volume = getVolume("hover-sound");
       hoverSound.play();
       hasPlayed = true;
     });
@@ -907,12 +950,13 @@ document
 ========================= */
 
 const cameraSound = document.getElementById("camera-sound");
-cameraSound.volume = 0.2;
+cameraSound.volume = getVolume("camera-sound");
 
 btnRight.addEventListener("click", () => {
   index = (index + 1) % rooms.length;
   updateCarousel();
   cameraSound.currentTime = 0;
+  cameraSound.volume = getVolume("camera-sound");
   cameraSound.play();
 });
 
@@ -920,21 +964,13 @@ btnLeft.addEventListener("click", () => {
   index = (index - 1 + rooms.length) % rooms.length;
   updateCarousel();
   cameraSound.currentTime = 0;
+  cameraSound.volume = getVolume("camera-sound");
   cameraSound.play();
 });
 
 /* =========================
    VOLUME CONTROLS
 ========================= */
-
-function applyVolumes() {
-  document.querySelectorAll(".sound-music").forEach((el) => {
-    el.volume = Math.min(1, masterVolume * musicVolume);
-  });
-  document.querySelectorAll(".sound-click").forEach((el) => {
-    el.volume = Math.min(1, masterVolume * clickVolume);
-  });
-}
 
 document.getElementById("master-slider").addEventListener("input", (e) => {
   masterVolume = e.target.value / 100;
@@ -976,7 +1012,6 @@ let eyeIdleTimeout = null;
 document.addEventListener("mousemove", (e) => {
   if (!eyeInside || !eyeOutside) return;
 
-  // Affiche l'oeil, cache la vidéo
   eyeInside.style.opacity = "1";
   eyeOutside.style.opacity = "1";
   if (videoAnimation) videoAnimation.style.opacity = "0";
@@ -995,7 +1030,6 @@ document.addEventListener("mousemove", (e) => {
 
   eyeInside.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
 
-  // Reset le timer d'inactivité
   clearTimeout(eyeIdleTimeout);
   eyeIdleTimeout = setTimeout(() => {
     eyeInside.style.opacity = "0";
