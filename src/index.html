@@ -13,7 +13,12 @@
   </head>
   <body>
     <div class="only-computer">
-      <h1>This game is only for compture</h1>
+      <h1 id="game-title-intro">
+        INTRUDER<span class="point-animation p-a-1">.</span
+        ><span class="point-animation p-a-2">.</span
+        ><span class="point-animation p-a-3">.</span>
+        <p>This game is only playable on desktop screens.</p>
+      </h1>
     </div>
     <audio
       id="hover-sound"
@@ -23,7 +28,7 @@
     ></audio>
     <audio
       id="clicking-sound"
-      class="sound-clicking"
+      class="sound-click"
       src="sound/click/clicking-changer.mp3"
       preload="auto"
     ></audio>
@@ -135,6 +140,18 @@
           <button class="difficulty-button" id="information-pop">
             <h2>INFORMATIONS</h2>
           </button>
+          <div id="info">
+            <div id="info-box">
+              <h2 id="game-title">INFORMATIONS</h2>
+              <div class="text-info">
+                <p>Made with HTML, CSS & JS — Blender for 3D assets.</p>
+                <p>S6 project — Eikon 2026</p>
+              </div>
+              <button id="ok-button" class="difficulty-button">
+                <h2>OK</h2>
+              </button>
+            </div>
+          </div>
         </div>
         <div class="fisrt-information">
           <p>

@@ -170,6 +170,10 @@ function updateTimer() {
   } else {
     endGame(true);
   }
+  if (minutes === 0 && seconds === 0) {
+    alarmSound.play();
+    const alarmSound = new Audio("alarm.mp3");
+  }
 }
 
 /* =========================
@@ -1031,5 +1035,27 @@ document.addEventListener("visibilitychange", () => {
         .play()
         .catch(() => {});
     }
+  }
+});
+
+/* =========================
+   POP UP INFO
+========================= */
+
+const informationPop = document.getElementById("information-pop");
+const info = document.getElementById("info");
+const okButton = document.getElementById("ok-button");
+
+informationPop.addEventListener("click", () => {
+  info.style.display = "flex";
+});
+
+okButton.addEventListener("click", () => {
+  info.style.display = "none";
+});
+
+info.addEventListener("click", (e) => {
+  if (e.target === info) {
+    info.style.display = "none";
   }
 });
