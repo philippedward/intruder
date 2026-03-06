@@ -39,6 +39,10 @@ video {
   width: 100%;
 }
 
+.only-computer {
+  display: none;
+}
+
 /* =========================
    EFFET ECRAN CRT GLOBAL
 ========================= */
@@ -1278,4 +1282,19 @@ button[disabled]:hover {
   z-index: 3;
   opacity: 0;
   transition: opacity 0.1s ease;
+}
+
+/* =========================
+   RESPONSIVES
+========================= */
+
+@media (max-width: 1024px) {
+  * {
+    opacity: 0;
+    display: none;
+  }
+  .only-computer {
+    display: flex;
+    background: black;
+  }
 }
