@@ -43,20 +43,20 @@ let settingsFromFirst = false;
 
 // Volumes de base "naturels" de chaque son (avant multiplicateurs)
 const BASE_VOLUMES = {
-  "ambiance-music": 0.5,
-  "first-screen-music": 0.5,
-  "win-sound": 0.4,
-  "wiiin-sound": 0.2,
-  "dead-sound": 0.8,
-  "iiii-sound": 0.2,
-  "time-sound": 0.8,
-  "monster-glitch-sound": 0.6,
-  "r-door-sound": 0.8,
-  "l-door-sound": 0.8,
-  "hover-sound": 0.5,
-  "camera-sound": 0.4,
-  "missed-sound": 0.3,
-  "loading-sound": 0.2,
+  "ambiance-music": 0.8,
+  "first-screen-music": 0.9,
+  "win-sound": 0.9,
+  "wiiin-sound": 0.3,
+  "dead-sound": 1.0,
+  "iiii-sound": 0.6,
+  "time-sound": 1.0,
+  "monster-glitch-sound": 0.9,
+  "r-door-sound": 1.0,
+  "l-door-sound": 1.0,
+  "hover-sound": 0.8,
+  "camera-sound": 0.7,
+  "missed-sound": 0.6,
+  "loading-sound": 0.4,
 };
 
 function getVolume(id) {
@@ -1036,4 +1036,49 @@ document.addEventListener("mousemove", (e) => {
     eyeOutside.style.opacity = "0";
     if (videoAnimation) videoAnimation.style.opacity = "1";
   }, 1000);
+});
+
+/* =========================
+   STOP SONS QUAND ON QUITTE LA PAGE
+========================= */
+
+function stopEverything() {
+  clearIntervals();
+  document.querySelectorAll("audio").forEach((audio) => {
+    audio.pause();
+    audio.currentTime = 0;
+  });
+}
+
+// Fermeture / rechargement de l'onglet
+window.addEventListener("pagehide", stopEverything);
+window.addEventListener("beforeunload", stopEverything);
+
+// Changement d'onglet (minimize, alt+tab, etc.)
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    document.querySelectorAll("audio").forEach((audio) => audio.pause());
+  } else {
+    // Reprend uniquement les sons qui étaient en lecture
+    const ambianceMusic = document.getElementById("ambiance-music");
+    const firstMusic = document.getElementById("first-screen-music");
+    const winSound = document.getElementById("win-sound");
+    const wiinSound = document.getElementById("wiiin-sound");
+    const deadSound = document.getElementById("dead-sound");
+
+    if (
+      carousel.style.display !== "none" &&
+      pauseMenu.style.display === "none"
+    ) {
+      ambianceMusic.play().catch(() => {});
+    }
+    if (firstScreen.style.display !== "none") {
+      firstMusic.play().catch(() => {});
+    }
+    if (gameOverScreen.style.display !== "none") {
+      winSound.play().catch(() => {});
+      wiinSound.play().catch(() => {});
+      deadSound.play().catch(() => {});
+    }
+  }
 });
