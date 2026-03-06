@@ -52,6 +52,7 @@ const BASE_VOLUMES = {
   "r-door-sound": 1.0,
   "l-door-sound": 1.0,
   "hover-sound": 0.8,
+  "clicking-sound": 0.8,
   "camera-sound": 0.7,
   "missed-sound": 0.6,
   "loading-sound": 0.4,
@@ -888,7 +889,7 @@ document.querySelectorAll("input[type='range']").forEach((slider) => {
 });
 
 /* =========================
-   SOUND - HOVER BOUTONS
+   SOUND - HOVER & CLICK BOUTONS
 ========================= */
 
 const hoverSound = document.getElementById("hover-sound");
@@ -897,6 +898,8 @@ document
   .querySelectorAll("button:not([disabled]):not(.arrow)")
   .forEach((button) => {
     let hasPlayed = false;
+
+    // Son au survol
     button.addEventListener("mouseenter", () => {
       if (hasPlayed) return;
       hoverSound.currentTime = 0;
@@ -904,8 +907,17 @@ document
       hoverSound.play();
       hasPlayed = true;
     });
+
     button.addEventListener("mouseleave", () => {
       hasPlayed = false;
+    });
+
+    // Son au clic
+    button.addEventListener("click", () => {
+      const clickingSound = document.getElementById("clicking-sound");
+      clickingSound.currentTime = 0;
+      clickingSound.volume = getVolume("clicking-sound");
+      clickingSound.play();
     });
   });
 
