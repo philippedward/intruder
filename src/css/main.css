@@ -573,34 +573,14 @@ a:hover {
     monster-flicker 4s steps(1) infinite 0.5s;
 }
 
-.monster-ss-1,
-.monster-ss-2,
-.monster-ss-3,
-.monster-ss-4 {
+.monster-1,
+.monster-2,
+.monster-3,
+.monster-4 {
   max-width: 100%;
   max-height: 100%;
   width: 100%;
   height: 100%;
-}
-
-.monster-1 {
-  bottom: 10%;
-  right: 20%;
-}
-
-.monster-2 {
-  top: 10%;
-  left: 10%;
-}
-
-.monster-3 {
-  top: 40%;
-  left: 30%;
-}
-
-.monster-4 {
-  top: 10%;
-  right: 10%;
 }
 
 /* =========================
