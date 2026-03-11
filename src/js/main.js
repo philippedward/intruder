@@ -213,11 +213,26 @@ function startIntervals() {
    SPAWN DES MONSTRES
 ========================= */
 
+// File mélangée des salles, reconstruite quand vide
+let roomQueue = [];
+
+function buildRoomQueue() {
+  const indices = Array.from({ length: rooms.length }, (_, i) => i);
+  // Fisher-Yates shuffle
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]];
+  }
+  roomQueue = indices;
+}
+
 function spawnMonster() {
-  const randomRoom = Math.floor(Math.random() * rooms.length);
+  if (roomQueue.length === 0) buildRoomQueue();
+
+  const randomRoom = roomQueue.pop();
   const room = rooms[randomRoom];
   const monsters = room.querySelectorAll(".monster-parent:not(.visible)");
-  if (monsters.length === 0) return;
+  if (monsters.length === 0) return; // salle pleine → on passe, on ne remet pas en file
 
   const randomIndex = Math.floor(Math.random() * monsters.length);
   const monster = monsters[randomIndex];
