@@ -213,61 +213,59 @@ function startIntervals() {
    SPAWN DES MONSTRES
 ========================= */
 
-let roomQueue = [];
-let lastSpawnedRoom = -1;
+let monsterQueue = [];
+let lastSpawnedMonster = null;
 
-function buildRoomQueue() {
-  const indices = Array.from({ length: rooms.length }, (_, i) => i);
+function buildMonsterQueue() {
+  // Collecte TOUS les monstres de toutes les salles
+  const allMonsters = Array.from(document.querySelectorAll(".monster-parent"));
 
-  // Fisher-Yates shuffle
-  for (let i = indices.length - 1; i > 0; i--) {
+  // Fisher-Yates shuffle sur tous les monstres
+  for (let i = allMonsters.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [indices[i], indices[j]] = [indices[j], indices[i]];
+    [allMonsters[i], allMonsters[j]] = [allMonsters[j], allMonsters[i]];
   }
 
-  // Si la première salle du nouveau cycle == dernière spawnée → on swap avec une autre
-  if (lastSpawnedRoom !== -1 && indices[0] === lastSpawnedRoom) {
-    const swapIndex = indices.length > 1 ? 1 : 0;
-    [indices[0], indices[swapIndex]] = [indices[swapIndex], indices[0]];
+  // Garantit que le premier du nouveau cycle ≠ le dernier spawné
+  if (
+    lastSpawnedMonster !== null &&
+    allMonsters[0] === lastSpawnedMonster &&
+    allMonsters.length > 1
+  ) {
+    [allMonsters[0], allMonsters[1]] = [allMonsters[1], allMonsters[0]];
   }
 
-  roomQueue = indices;
+  monsterQueue = allMonsters;
 }
 
 function spawnMonster() {
-  if (roomQueue.length === 0) buildRoomQueue();
+  // Rebuild si la queue est vide
+  if (monsterQueue.length === 0) buildMonsterQueue();
 
-  const roomIndex = roomQueue.shift(); // prend le premier (pas le dernier)
-  const room = rooms[roomIndex];
-  const monsters = room.querySelectorAll(".monster-parent:not(.visible)");
+  // Cherche le prochain monstre qui n'est pas déjà visible
+  let attempts = 0;
+  while (monsterQueue.length > 0 && attempts < monsterQueue.length) {
+    const monster = monsterQueue.shift();
 
-  if (monsters.length === 0) {
-    // Salle pleine → on remet en fin de queue pour réessayer plus tard
-    roomQueue.push(roomIndex);
-    // On essaie la suivante dans la queue
-    if (
-      roomQueue.every(
-        (i) =>
-          rooms[i].querySelectorAll(".monster-parent:not(.visible)").length ===
-          0,
-      )
-    )
-      return;
-    spawnMonster();
+    if (monster.classList.contains("visible")) {
+      // Déjà visible → on le remet en fin de queue pour plus tard
+      monsterQueue.push(monster);
+      attempts++;
+      continue;
+    }
+
+    // Spawn ce monstre
+    monster.classList.add("visible");
+    monster.style.opacity = "1";
+    lastSpawnedMonster = monster;
+    monsterCount++;
+
+    if (monsterCount >= 4) {
+      endGame(false);
+    }
     return;
   }
-
-  const randomIndex = Math.floor(Math.random() * monsters.length);
-  const monster = monsters[randomIndex];
-
-  monster.classList.add("visible");
-  monster.style.opacity = "1";
-  lastSpawnedRoom = roomIndex;
-  monsterCount++;
-
-  if (monsterCount >= 4) {
-    endGame(false);
-  }
+  // Tous les monstres sont déjà visibles → game over imminent, on attend
 }
 
 /* =========================
@@ -558,6 +556,8 @@ function startGame() {
 
   timeLeft = 120;
   monsterCount = 0;
+  monsterQueue = [];
+  lastSpawnedMonster = null;
   timeAlertPlayed = false;
 
   const ambianceMusic = document.getElementById("ambiance-music");
@@ -579,9 +579,18 @@ document.getElementById("skip-button").addEventListener("click", () => {
 
 function pauseGame() {
   clearIntervals();
-  pauseMenu.style.display = "flex";
   menuButton.style.display = "none";
   document.getElementById("ambiance-music").pause();
+
+  // Remet le menu pause dans le bon état avant d'afficher
+  pauseTitle.innerHTML = `PAUSED<span class="point-animation-p">.</span>`;
+  pauseMainButtons.style.display = "flex";
+  settingsMain.style.display = "none";
+  panelGraphics.style.display = "none";
+  panelSound.style.display = "none";
+  panelControls.style.display = "none";
+
+  pauseMenu.style.display = "flex";
 }
 
 function resumeGame() {
@@ -674,6 +683,8 @@ function resetGame() {
   timeLeft = 120;
   monsterCount = 0;
   timeAlertPlayed = false;
+  monsterQueue = [];
+  lastSpawnedMonster = null;
   timerElement.textContent = "2:00";
 
   document.querySelectorAll(".monster-parent").forEach((monster) => {
@@ -706,6 +717,8 @@ function backToMenu() {
   index = 0;
   timeLeft = 120;
   monsterCount = 0;
+  monsterQueue = [];
+  lastSpawnedMonster = null;
   timeAlertPlayed = false;
   timerElement.textContent = "2:00";
 
