@@ -41,9 +41,9 @@ let sensitivity = 5;
 ========================= */
 
 const BASE_VOLUMES = {
-  "ambiance-music": 0.8,
+  "ambiance-music": 1.0,
   "first-screen-music": 0.9,
-  "win-sound": 0.9,
+  "win-sound": 1.0,
   "wiiin-sound": 0.3,
   "dead-sound": 1.0,
   "iiii-sound": 0.6,
@@ -213,32 +213,56 @@ function startIntervals() {
    SPAWN DES MONSTRES
 ========================= */
 
-// File mélangée des salles, reconstruite quand vide
 let roomQueue = [];
+let lastSpawnedRoom = -1;
 
 function buildRoomQueue() {
   const indices = Array.from({ length: rooms.length }, (_, i) => i);
+
   // Fisher-Yates shuffle
   for (let i = indices.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [indices[i], indices[j]] = [indices[j], indices[i]];
   }
+
+  // Si la première salle du nouveau cycle == dernière spawnée → on swap avec une autre
+  if (lastSpawnedRoom !== -1 && indices[0] === lastSpawnedRoom) {
+    const swapIndex = indices.length > 1 ? 1 : 0;
+    [indices[0], indices[swapIndex]] = [indices[swapIndex], indices[0]];
+  }
+
   roomQueue = indices;
 }
 
 function spawnMonster() {
   if (roomQueue.length === 0) buildRoomQueue();
 
-  const randomRoom = roomQueue.pop();
-  const room = rooms[randomRoom];
+  const roomIndex = roomQueue.shift(); // prend le premier (pas le dernier)
+  const room = rooms[roomIndex];
   const monsters = room.querySelectorAll(".monster-parent:not(.visible)");
-  if (monsters.length === 0) return; // salle pleine → on passe, on ne remet pas en file
+
+  if (monsters.length === 0) {
+    // Salle pleine → on remet en fin de queue pour réessayer plus tard
+    roomQueue.push(roomIndex);
+    // On essaie la suivante dans la queue
+    if (
+      roomQueue.every(
+        (i) =>
+          rooms[i].querySelectorAll(".monster-parent:not(.visible)").length ===
+          0,
+      )
+    )
+      return;
+    spawnMonster();
+    return;
+  }
 
   const randomIndex = Math.floor(Math.random() * monsters.length);
   const monster = monsters[randomIndex];
 
   monster.classList.add("visible");
   monster.style.opacity = "1";
+  lastSpawnedRoom = roomIndex;
   monsterCount++;
 
   if (monsterCount >= 4) {
