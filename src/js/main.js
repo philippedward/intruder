@@ -1612,3 +1612,54 @@ document
     stopFirstScreenMusic();
     startGameHard();
   });
+
+/* =========================
+   SPAWN DES OBJECTS
+========================= */
+
+let objectQueue = [];
+let lastSpawnedObject = null;
+
+function buildobjectQueue() {
+  const allObjects = Array.from(document.querySelectorAll(".object-parent"));
+
+  for (let i = allObjects.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [allObjects[i], allObjects[j]] = [allObjects[j], allObjects[i]];
+  }
+
+  if (
+    lastSpawnedObject !== null &&
+    allObjects[0] === lastSpawnedObject &&
+    allObjects.length > 1
+  ) {
+    [allObjects[0], allObjects[1]] = [allObjects[0]];
+  }
+
+  objectQueue = allObjects;
+}
+
+function spawnObject() {
+  if (objectQueue.length === 0) buildobjectQueue();
+
+  let attempts = 0;
+  while (objectQueue.length > 0 && attempts < objectQueue.length) {
+    const object = objectQueue.shift();
+
+    if (object.classList.contains("visible")) {
+      objectQueue.push(object);
+      attempts++;
+      continue;
+    }
+
+    object.classList.add("visible");
+    object.style.opacity = "1";
+    lastSpawnedObject = object;
+    objectCount++;
+
+    if (objectCount >= 4) {
+      endGame(false);
+    }
+    return;
+  }
+}
