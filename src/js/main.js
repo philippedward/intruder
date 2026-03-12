@@ -1285,7 +1285,7 @@ function updateTimerHard() {
 
 function startIntervalsHard() {
   timerInterval = setInterval(updateTimerHard, 1000);
-  monsterInterval = setInterval(spawnMonsterHard, 10000);
+  monsterInterval = setInterval(spawnMonsterHard, 7000);
 
   const doorSounds = ["r-door-sound", "l-door-sound"];
   let doorPlayCount = { "r-door-sound": 0, "l-door-sound": 0 };
