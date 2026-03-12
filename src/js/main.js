@@ -2,8 +2,8 @@ const TRANSPARENCY_THRESHOLD = 0.1;
 
 const track = document.querySelector(".carousel-track");
 const rooms = document.querySelectorAll(".img-text");
-const btnLeft = document.querySelector(".arrow.left");
-const btnRight = document.querySelector(".arrow.right");
+const btnLeft = document.querySelector(".arrow-left");
+const btnRight = document.querySelector(".arrow-right");
 const timerElement = document.getElementById("timer");
 const firstScreen = document.getElementById("first-screen");
 const startScreen = document.getElementById("start-screen");
@@ -666,12 +666,12 @@ function startGame() {
     .catch((err) => console.log("Erreur ambiance-music:", err));
 
   clearIntervals();
-  document.getElementById("how-to-play").style.display = "flex";
+  document.getElementById("tuto-normal").style.display = "flex";
   createBlackout(false);
 }
 
 document.getElementById("skip-button").addEventListener("click", () => {
-  document.getElementById("how-to-play").style.display = "none";
+  document.getElementById("tuto-normal").style.display = "none";
   startIntervals();
 });
 
@@ -717,6 +717,7 @@ function endGame(won) {
 
     createBlackout(true, () => {
       carousel.style.display = "none";
+      document.getElementById("carousel-hard").style.display = "none";
       pauseMenu.style.display = "none";
       gameOverScreen.style.display = "flex";
       menuButton.style.display = "none";
@@ -728,6 +729,7 @@ function endGame(won) {
 
   createBlackout(true, () => {
     carousel.style.display = "none";
+    document.getElementById("carousel-hard").style.display = "none";
     pauseMenu.style.display = "none";
     gameOverScreen.style.display = "flex";
     menuButton.style.display = "none";
@@ -825,6 +827,7 @@ function backToMenu() {
   updateCarousel();
 
   carousel.style.display = "none";
+  document.getElementById("carousel-hard").style.display = "none";
   gameOverScreen.style.display = "none";
   pauseMenu.style.display = "none";
   startScreen.style.display = "none";
@@ -869,15 +872,12 @@ restartButton.addEventListener("click", resetGame);
 backButton.addEventListener("click", backToMenu);
 
 difficultyButtons.forEach((button) => {
-  if (button.getAttribute("data-difficulty") === "hard") {
-    button.disabled = true;
-  }
-  button.addEventListener("click", () => {
-    if (button.getAttribute("data-difficulty") === "normal") {
+  if (button.getAttribute("data-difficulty") === "normal") {
+    button.addEventListener("click", () => {
       stopFirstScreenMusic();
       startGame();
-    }
-  });
+    });
+  }
 });
 
 /* =========================
@@ -1046,7 +1046,7 @@ document.querySelectorAll("input[type='range']").forEach((slider) => {
 const hoverSound = document.getElementById("hover-sound");
 
 document
-  .querySelectorAll("button:not([disabled]):not(.arrow)")
+  .querySelectorAll("button:not([disabled]):not(.arrows)")
   .forEach((button) => {
     let hasPlayed = false;
 
@@ -1204,3 +1204,411 @@ info.addEventListener("click", (e) => {
     info.style.display = "none";
   }
 });
+
+/* =========================
+   JEU VERSION HARD
+========================= */
+
+const carouselHard = document.getElementById("carousel-hard");
+const trackHard = document.querySelector(".carousel-track-hard");
+const roomsHard = document.querySelectorAll(".img-text-hard");
+const btnLeftHard = document.querySelector(".arrow-left-hard");
+const btnRightHard = document.querySelector(".arrow-right-hard");
+const timerElementHard = document.getElementById("timer-hard");
+let indexHard = 0;
+
+function updateCarouselHard() {
+  trackHard.style.transform = `translateX(-${indexHard * 100}%)`;
+}
+
+function getVisibleMonsterAtPointHard(cx, cy) {
+  const visibleMonsters = Array.from(
+    carouselHard.querySelectorAll(".monster-parent.visible"),
+  );
+
+  for (const monster of visibleMonsters) {
+    const rect = monster.getBoundingClientRect();
+
+    if (
+      cx < rect.left ||
+      cx > rect.right ||
+      cy < rect.top ||
+      cy > rect.bottom
+    ) {
+      continue;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = monster.naturalWidth;
+    canvas.height = monster.naturalHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(monster, 0, 0);
+
+    const x = Math.floor(
+      ((cx - rect.left) / rect.width) * monster.naturalWidth,
+    );
+    const y = Math.floor(
+      ((cy - rect.top) / rect.height) * monster.naturalHeight,
+    );
+
+    try {
+      const pixel = ctx.getImageData(x, y, 1, 1).data;
+      if (pixel[3] >= 25) return monster;
+    } catch {
+      return monster;
+    }
+  }
+
+  return null;
+}
+
+function updateTimerHard() {
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+  timerElementHard.textContent =
+    minutes + ":" + seconds.toString().padStart(2, "0");
+
+  if (timeLeft <= 30 && !timeAlertPlayed) {
+    const timeSound = document.getElementById("time-sound");
+    timeSound.currentTime = 0;
+    timeSound.volume = getVolume("time-sound");
+    timeSound.play().catch((err) => console.log("Erreur time-sound:", err));
+    timeAlertPlayed = true;
+  }
+
+  if (timeLeft > 0) {
+    timeLeft--;
+  } else {
+    endGame(true);
+  }
+}
+
+function startIntervalsHard() {
+  timerInterval = setInterval(updateTimerHard, 1000);
+  monsterInterval = setInterval(spawnMonsterHard, 10000);
+
+  const doorSounds = ["r-door-sound", "l-door-sound"];
+  let doorPlayCount = { "r-door-sound": 0, "l-door-sound": 0 };
+
+  function playRandomDoor() {
+    const notEnough = doorSounds.filter((id) => doorPlayCount[id] < 2);
+    const pool = notEnough.length > 0 ? notEnough : doorSounds;
+    const randomId = pool[Math.floor(Math.random() * pool.length)];
+    const sound = document.getElementById(randomId);
+    sound.currentTime = 0;
+    sound.volume = getVolume(randomId);
+    sound.play().catch((err) => console.log("Erreur door-sound:", err));
+    doorPlayCount[randomId]++;
+  }
+
+  doorInterval = setInterval(playRandomDoor, 25000);
+}
+
+let monsterQueueHard = [];
+let lastSpawnedMonsterHard = null;
+
+function buildMonsterQueueHard() {
+  const allMonsters = Array.from(
+    carouselHard.querySelectorAll(".monster-parent"),
+  );
+
+  for (let i = allMonsters.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [allMonsters[i], allMonsters[j]] = [allMonsters[j], allMonsters[i]];
+  }
+
+  if (
+    lastSpawnedMonsterHard !== null &&
+    allMonsters[0] === lastSpawnedMonsterHard &&
+    allMonsters.length > 1
+  ) {
+    [allMonsters[0], allMonsters[1]] = [allMonsters[1], allMonsters[0]];
+  }
+
+  monsterQueueHard = allMonsters;
+}
+
+function spawnMonsterHard() {
+  if (monsterQueueHard.length === 0) buildMonsterQueueHard();
+
+  let attempts = 0;
+  while (monsterQueueHard.length > 0 && attempts < monsterQueueHard.length) {
+    const monster = monsterQueueHard.shift();
+
+    if (monster.classList.contains("visible")) {
+      monsterQueueHard.push(monster);
+      attempts++;
+      continue;
+    }
+
+    monster.classList.add("visible");
+    monster.style.opacity = "1";
+    lastSpawnedMonsterHard = monster;
+    monsterCount++;
+
+    if (monsterCount >= 4) {
+      endGame(false);
+    }
+    return;
+  }
+}
+
+function startGameHard() {
+  startScreen.style.display = "none";
+  firstScreen.style.display = "none";
+  gameOverScreen.style.display = "none";
+  pauseMenu.style.display = "none";
+  carousel.style.display = "none";
+  carouselHard.style.display = "block";
+  menuButton.style.display = "block";
+
+  timeLeft = 120;
+  monsterCount = 0;
+  monsterQueueHard = [];
+  lastSpawnedMonsterHard = null;
+  timeAlertPlayed = false;
+  timerElementHard.textContent = "2:00";
+
+  const ambianceMusic = document.getElementById("ambiance-music");
+  ambianceMusic.volume = getVolume("ambiance-music");
+  ambianceMusic.currentTime = 0;
+  ambianceMusic
+    .play()
+    .catch((err) => console.log("Erreur ambiance-music:", err));
+
+  clearIntervals();
+  document.getElementById("tuto-hard").style.display = "flex";
+  createBlackout(false);
+}
+
+document.getElementById("skip-button-hard").addEventListener("click", () => {
+  document.getElementById("tuto-hard").style.display = "none";
+  startIntervalsHard();
+});
+
+btnRightHard.addEventListener("click", () => {
+  indexHard = (indexHard + 1) % roomsHard.length;
+  updateCarouselHard();
+  cameraSound.currentTime = 0;
+  cameraSound.volume = getVolume("camera-sound");
+  cameraSound.play();
+});
+
+btnLeftHard.addEventListener("click", () => {
+  indexHard = (indexHard - 1 + roomsHard.length) % roomsHard.length;
+  updateCarouselHard();
+  cameraSound.currentTime = 0;
+  cameraSound.volume = getVolume("camera-sound");
+  cameraSound.play();
+});
+
+carouselHard.addEventListener("mousedown", (e) => {
+  if (e.button !== 0) return;
+  if (e.target.closest("button, #timer-hard, .text-hard, .text-battery-hard"))
+    return;
+
+  const startCx = e.clientX;
+  const startCy = e.clientY;
+  const hitMonster = getVisibleMonsterAtPointHard(startCx, startCy);
+
+  if (hitMonster) {
+    /* ── CAS 1 : monstre trouve ── */
+    let isHolding = true;
+
+    moveBar(startCx, startCy);
+    loadingBar.style.display = "block";
+    loadingFill.style.transition = "none";
+    loadingFill.style.width = "0%";
+
+    const loadingSound = document.getElementById("loading-sound");
+    loadingSound.currentTime = 0;
+    loadingSound.volume = getVolume("loading-sound");
+    loadingSound
+      .play()
+      .catch((err) => console.log("Erreur loading-sound:", err));
+
+    requestAnimationFrame(() => {
+      loadingFill.style.transition = "width 2000ms linear";
+      loadingFill.style.width = "100%";
+    });
+
+    function onMove(ev) {
+      if (!isHolding) return;
+      moveBar(ev.clientX, ev.clientY);
+    }
+
+    function cancelHold() {
+      if (!isHolding) return;
+      isHolding = false;
+      clearTimeout(holdTimeout);
+      loadingFill.style.transition = "none";
+      loadingFill.style.width = "0%";
+      loadingBar.style.display = "none";
+      loadingSound.pause();
+      loadingSound.currentTime = 0;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", cancelHold);
+    }
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", cancelHold);
+
+    const holdTimeout = setTimeout(() => {
+      if (!isHolding) return;
+      isHolding = false;
+
+      hitMonster.classList.remove("visible");
+      hitMonster.style.opacity = "0";
+      monsterCount--;
+      if (monsterCount < 0) monsterCount = 0;
+
+      loadingFill.style.transition = "none";
+      loadingFill.style.width = "0%";
+      loadingBar.style.display = "none";
+      loadingSound.pause();
+      loadingSound.currentTime = 0;
+
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", cancelHold);
+
+      carouselHard.classList.add("screen-glitch");
+
+      const scanEl = document.createElement("div");
+      scanEl.className = "screen-glitch-scan";
+      carouselHard.appendChild(scanEl);
+
+      const lineEl = document.createElement("div");
+      lineEl.className = "screen-glitch-line";
+      carouselHard.appendChild(lineEl);
+
+      const glitchVideo = document.createElement("video");
+      glitchVideo.src = "glitch1.mp4";
+      glitchVideo.autoplay = true;
+      glitchVideo.muted = true;
+      glitchVideo.style.cssText = `
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0.3;
+        z-index: 102;
+        pointer-events: none;
+      `;
+      carouselHard.appendChild(glitchVideo);
+
+      const glitchSound = document.getElementById("monster-glitch-sound");
+      glitchSound.currentTime = 0;
+      glitchSound.volume = getVolume("monster-glitch-sound");
+      glitchSound.play();
+
+      setTimeout(() => {
+        carouselHard.classList.remove("screen-glitch");
+        scanEl.remove();
+        lineEl.remove();
+        glitchVideo.remove();
+      }, 2000);
+    }, 2000);
+  } else {
+    /* ── CAS 2 : fond ou zone transparente ── */
+    let voidCx = startCx;
+    let voidCy = startCy;
+    let voidIsHolding = true;
+
+    moveBar(voidCx, voidCy);
+    loadingBar.style.display = "block";
+    loadingFill.style.transition = "none";
+    loadingFill.style.width = "0%";
+
+    const loadingSound = document.getElementById("loading-sound");
+    loadingSound.currentTime = 0;
+    loadingSound.volume = getVolume("loading-sound");
+    loadingSound
+      .play()
+      .catch((err) => console.log("Erreur loading-sound:", err));
+
+    requestAnimationFrame(() => {
+      loadingFill.style.transition = "width 2000ms linear";
+      loadingFill.style.width = "100%";
+    });
+
+    function onVoidMove(ev) {
+      voidCx = ev.clientX;
+      voidCy = ev.clientY;
+      moveBar(voidCx, voidCy);
+    }
+
+    function onVoidUp() {
+      if (!voidIsHolding) return;
+      voidIsHolding = false;
+      clearTimeout(voidHoldTimeout);
+      loadingFill.style.transition = "none";
+      loadingFill.style.width = "0%";
+      loadingBar.style.display = "none";
+      loadingSound.pause();
+      loadingSound.currentTime = 0;
+      document.removeEventListener("mouseup", onVoidUp);
+      document.removeEventListener("mousemove", onVoidMove);
+    }
+
+    document.addEventListener("mousemove", onVoidMove);
+    document.addEventListener("mouseup", onVoidUp);
+
+    const voidHoldTimeout = setTimeout(() => {
+      if (!voidIsHolding) return;
+      voidIsHolding = false;
+      loadingFill.style.transition = "none";
+      loadingFill.style.width = "0%";
+      loadingBar.style.display = "none";
+      loadingSound.pause();
+      loadingSound.currentTime = 0;
+
+      document.removeEventListener("mouseup", onVoidUp);
+      document.removeEventListener("mousemove", onVoidMove);
+
+      const missedSound = document.getElementById("missed-sound");
+      missedSound.currentTime = 0;
+      missedSound.volume = getVolume("missed-sound");
+      missedSound
+        .play()
+        .catch((err) => console.log("Erreur missed-sound:", err));
+
+      document.body.classList.add("cursor-locked");
+
+      const shakeCross = document.createElement("div");
+      shakeCross.style.cssText = `
+        position: fixed;
+        pointer-events: none;
+        z-index: 9999;
+        left: ${voidCx - 10}px;
+        top: ${voidCy - 10}px;
+      `;
+      shakeCross.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16">
+        <line x1="2" y1="2" x2="14" y2="14" stroke="red" stroke-width="2.5"/>
+        <line x1="14" y1="2" x2="2" y2="14" stroke="red" stroke-width="2.5"/>
+      </svg>`;
+      shakeCross.classList.add("cross-visible");
+      document.body.appendChild(shakeCross);
+
+      function followMouse(ev) {
+        shakeCross.style.left = ev.clientX - 10 + "px";
+        shakeCross.style.top = ev.clientY - 10 + "px";
+      }
+      document.addEventListener("mousemove", followMouse);
+
+      setTimeout(() => {
+        shakeCross.remove();
+        document.body.classList.remove("cursor-locked");
+        document.removeEventListener("mousemove", followMouse);
+      }, 800);
+    }, 2000);
+  }
+  carouselHard.addEventListener("dragstart", (e) => e.preventDefault());
+});
+
+document
+  .querySelector("[data-difficulty='hard']")
+  .addEventListener("click", () => {
+    stopFirstScreenMusic();
+    startGameHard();
+  });

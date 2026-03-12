@@ -371,27 +371,37 @@ a:hover {
    CAROUSEL / JEU
 ========================= */
 
-#carousel {
+#carousel,
+#carousel-hard {
   position: relative;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
 }
 
-.carousel-window {
+#carousel-hard img {
+  -webkit-user-drag: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+.carousel-window,
+.carousel-window-hard {
   width: 100%;
   height: 100%;
   overflow: hidden;
 }
 
-.carousel-track {
+.carousel-track,
+.carousel-track-hard {
   position: relative;
   display: flex;
   width: 100%;
   height: 100%;
 }
 
-.img-text {
+.img-text,
+.img-text-hard {
   position: relative;
   width: 100vw;
   height: 100vh;
@@ -399,20 +409,23 @@ a:hover {
   overflow: hidden;
 }
 
-.carousel-track img {
+.carousel-track img,
+.carousel-track-hard img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.text {
+.text,
+.text-hard {
   position: absolute;
   bottom: 3%;
   left: 3%;
   color: var(--crt-white);
 }
 
-.text-battery {
+.text-battery,
+.text-battery-hard {
   position: absolute;
   top: 3%;
   left: 3%;
@@ -423,7 +436,8 @@ a:hover {
   gap: 1rem;
 }
 
-.text-battery h3 {
+.text-battery h3,
+.text-battery-hard h3 {
   font-size: 1rem;
 }
 
@@ -440,11 +454,59 @@ a:hover {
   pointer-events: none;
 }
 
+#carousel-hard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 40%,
+    rgba(0, 0, 0, 0.45) 100%
+  );
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* =========================
+   CAROUSEL HARD - COULEUR ROUGE
+========================= */
+
+#tuto-hard #tuto-box {
+  border-color: #ff0040;
+  box-shadow: 0 0 20px rgba(255, 0, 64, 0.3);
+}
+
+#skip-button-hard {
+  border-color: #ff0040;
+}
+
+#skip-button-hard:hover {
+  background-color: rgba(255, 0, 64, 0.08);
+  border-color: rgba(255, 0, 64, 0.6);
+  box-shadow:
+    0 0 20px rgba(255, 0, 64, 0.3),
+    0 0 40px rgba(255, 0, 64, 0.1),
+    inset 0 0 20px rgba(255, 0, 64, 0.05);
+}
+
+.red-hard:hover {
+  background-color: rgba(255, 0, 64, 0.08);
+  border-color: rgba(255, 0, 64, 0.6);
+  box-shadow:
+    0 0 20px rgba(255, 0, 64, 0.3),
+    0 0 40px rgba(255, 0, 64, 0.1),
+    inset 0 0 20px rgba(255, 0, 64, 0.05);
+  animation:
+    shake 0.5s ease-in-out infinite,
+    button-flicker 0.15s steps(1) infinite;
+}
+
 /* =========================
    TIMER
 ========================= */
 
-#timer {
+#timer,
+#timer-hard {
   font-family: var(--pixel-font);
   font-size: 3rem;
   color: var(--crt-white);
@@ -475,7 +537,7 @@ a:hover {
    FLECHES NAVIGATION
 ========================= */
 
-.arrow {
+.arrows {
   background: none;
   border: none;
   cursor: pointer;
@@ -487,19 +549,21 @@ a:hover {
   transition: opacity 0.3s;
 }
 
-.arrow svg path {
+.arrows svg path {
   fill: var(--crt-white);
 }
 
-.arrow.left {
+.arrow-left,
+.arrow-left-hard {
   left: 3%;
 }
 
-.arrow.right {
+.arrow-right,
+.arrow-right-hard {
   right: 3%;
 }
 
-.arrow:hover {
+.arrows:hover {
   opacity: 1;
   animation: shake-arrow 0.5s ease-in-out infinite;
   filter: drop-shadow(0 0 8px var(--crt-white))
@@ -565,10 +629,7 @@ a:hover {
     monster-flicker 4s steps(1) infinite 0.5s;
 }
 
-.monster-1,
-.monster-2,
-.monster-3,
-.monster-4 {
+.monster {
   max-width: 100%;
   max-height: 100%;
   width: 100%;
@@ -875,30 +936,6 @@ input[type="range"]::-webkit-slider-thumb {
   justify-content: center;
 }
 
-.difficulty-button[disabled] {
-  color: #3b3f3b;
-  border-color: #363b36;
-  cursor: not-allowed;
-  text-shadow: none;
-  box-shadow: none;
-}
-
-/* Empêche le hover de s'activer sur les boutons disabled */
-.difficulty-button[disabled]:hover {
-  animation: none !important;
-  background-color: transparent;
-  animation: none;
-  box-shadow: none;
-}
-
-#pause-menu button[disabled] {
-  color: #3b3f3b;
-  border: 2px solid #363b36;
-  cursor: not-allowed;
-  text-shadow: none;
-  box-shadow: none;
-}
-
 /* =========================
    ANIMATION TREMBLEMENT
 ========================= */
@@ -985,15 +1022,6 @@ input[type="range"]::-webkit-slider-thumb {
 
 .cursor-locked * {
   cursor: none !important;
-}
-
-button[disabled],
-button[disabled] * {
-  cursor: none !important;
-}
-
-button[disabled]:hover {
-  animation: none !important;
 }
 
 /* =========================
@@ -1209,7 +1237,8 @@ button[disabled]:hover {
    POP UP TUTO
 ========================= */
 
-#how-to-play {
+#tuto-normal,
+#tuto-hard {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
@@ -1219,7 +1248,7 @@ button[disabled]:hover {
   align-items: center;
 }
 
-#how-to-play-box {
+#tuto-box {
   border: 2px solid #00ff41;
   background: rgba(0, 0, 0, 0.85);
   padding: 3rem 4rem;
@@ -1231,7 +1260,8 @@ button[disabled]:hover {
   min-width: 400px;
 }
 
-#skip-button {
+#skip-button,
+#skip-button-hard {
   align-self: flex-end;
 }
 
