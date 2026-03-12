@@ -553,12 +553,12 @@ a:hover {
   z-index: 5;
   opacity: 0;
   transition: opacity 0.1s;
-  pointer-events: none; /* reste none par défaut */
+  pointer-events: none;
 }
 
 .monster-parent.visible {
   opacity: 1;
-  pointer-events: auto; /* actif seulement visible */
+  pointer-events: none;
   cursor: crosshair;
   animation:
     monster-appear 0.3s steps(3) forwards,
