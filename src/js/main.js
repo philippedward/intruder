@@ -78,7 +78,6 @@ function applyVolumes() {
 
 /* =========================
    STOP ALL SOUNDS
-   Stoppe tout SAUF first-screen-music
 ========================= */
 
 function stopAllSounds() {
@@ -170,10 +169,6 @@ function updateTimer() {
   } else {
     endGame(true);
   }
-  if (minutes === 0 && seconds === 0) {
-    alarmSound.play();
-    const alarmSound = new Audio("alarm.mp3");
-  }
 }
 
 /* =========================
@@ -217,16 +212,13 @@ let monsterQueue = [];
 let lastSpawnedMonster = null;
 
 function buildMonsterQueue() {
-  // Collecte TOUS les monstres de toutes les salles
   const allMonsters = Array.from(document.querySelectorAll(".monster-parent"));
 
-  // Fisher-Yates shuffle sur tous les monstres
   for (let i = allMonsters.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [allMonsters[i], allMonsters[j]] = [allMonsters[j], allMonsters[i]];
   }
 
-  // Garantit que le premier du nouveau cycle ≠ le dernier spawné
   if (
     lastSpawnedMonster !== null &&
     allMonsters[0] === lastSpawnedMonster &&
@@ -239,22 +231,18 @@ function buildMonsterQueue() {
 }
 
 function spawnMonster() {
-  // Rebuild si la queue est vide
   if (monsterQueue.length === 0) buildMonsterQueue();
 
-  // Cherche le prochain monstre qui n'est pas déjà visible
   let attempts = 0;
   while (monsterQueue.length > 0 && attempts < monsterQueue.length) {
     const monster = monsterQueue.shift();
 
     if (monster.classList.contains("visible")) {
-      // Déjà visible → on le remet en fin de queue pour plus tard
       monsterQueue.push(monster);
       attempts++;
       continue;
     }
 
-    // Spawn ce monstre
     monster.classList.add("visible");
     monster.style.opacity = "1";
     lastSpawnedMonster = monster;
@@ -265,7 +253,53 @@ function spawnMonster() {
     }
     return;
   }
-  // Tous les monstres sont déjà visibles → game over imminent, on attend
+}
+
+/* =========================
+   DETECTION MONSTRE SOUS LE CURSEUR
+   Les monstres ont pointer-events: none TOUJOURS.
+   On detecte manuellement le pixel alpha du PNG.
+========================= */
+
+function getVisibleMonsterAtPoint(cx, cy) {
+  const visibleMonsters = Array.from(
+    document.querySelectorAll(".monster-parent.visible"),
+  );
+
+  for (const monster of visibleMonsters) {
+    const rect = monster.getBoundingClientRect();
+
+    if (
+      cx < rect.left ||
+      cx > rect.right ||
+      cy < rect.top ||
+      cy > rect.bottom
+    ) {
+      continue;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = monster.naturalWidth;
+    canvas.height = monster.naturalHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(monster, 0, 0);
+
+    const x = Math.floor(
+      ((cx - rect.left) / rect.width) * monster.naturalWidth,
+    );
+    const y = Math.floor(
+      ((cy - rect.top) / rect.height) * monster.naturalHeight,
+    );
+
+    try {
+      const pixel = ctx.getImageData(x, y, 1, 1).data;
+      if (pixel[3] >= 25) return monster;
+    } catch {
+      return monster;
+    }
+  }
+
+  return null;
 }
 
 /* =========================
@@ -351,31 +385,24 @@ function moveBar(cx, cy) {
 }
 
 /* =========================
-   LISTENERS MONSTRES
+   CAROUSEL MOUSEDOWN UNIFIE
+   - Pixel opaque monstre  => hold 2s pour eliminer
+   - Fond / transparent    => hold 2s pour croix rouge
 ========================= */
 
-document.querySelectorAll(".monster-parent").forEach((monster) => {
-  let holdTimeout = null;
-  let isHolding = false;
+document.getElementById("carousel").addEventListener("mousedown", (e) => {
+  if (e.button !== 0) return;
+  if (e.target.closest("button, #timer, .text, .text-battery")) return;
 
-  function cancelHold() {
-    clearTimeout(holdTimeout);
-    holdTimeout = null;
-    isHolding = false;
-    loadingFill.style.transition = "none";
-    loadingFill.style.width = "0%";
-    loadingBar.style.display = "none";
-    const loadingSound = document.getElementById("loading-sound");
-    loadingSound.pause();
-    loadingSound.currentTime = 0;
-  }
+  const startCx = e.clientX;
+  const startCy = e.clientY;
+  const hitMonster = getVisibleMonsterAtPoint(startCx, startCy);
 
-  monster.addEventListener("mousedown", (e) => {
-    if (e.button !== 0) return;
-    if (!monster.classList.contains("visible")) return;
-    isHolding = true;
+  if (hitMonster) {
+    /* ── CAS 1 : monstre trouve ── */
+    let isHolding = true;
 
-    moveBar(e.clientX, e.clientY);
+    moveBar(startCx, startCy);
     loadingBar.style.display = "block";
     loadingFill.style.transition = "none";
     loadingFill.style.width = "0%";
@@ -392,12 +419,44 @@ document.querySelectorAll(".monster-parent").forEach((monster) => {
       loadingFill.style.width = "100%";
     });
 
-    holdTimeout = setTimeout(() => {
+    function onMove(ev) {
       if (!isHolding) return;
-      monster.classList.remove("visible");
-      monster.style.opacity = "0";
+      moveBar(ev.clientX, ev.clientY);
+    }
+
+    function cancelHold() {
+      if (!isHolding) return;
+      isHolding = false;
+      clearTimeout(holdTimeout);
+      loadingFill.style.transition = "none";
+      loadingFill.style.width = "0%";
+      loadingBar.style.display = "none";
+      loadingSound.pause();
+      loadingSound.currentTime = 0;
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", cancelHold);
+    }
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", cancelHold);
+
+    const holdTimeout = setTimeout(() => {
+      if (!isHolding) return;
+      isHolding = false;
+
+      hitMonster.classList.remove("visible");
+      hitMonster.style.opacity = "0";
       monsterCount--;
       if (monsterCount < 0) monsterCount = 0;
+
+      loadingFill.style.transition = "none";
+      loadingFill.style.width = "0%";
+      loadingBar.style.display = "none";
+      loadingSound.pause();
+      loadingSound.currentTime = 0;
+
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", cancelHold);
 
       carousel.classList.add("screen-glitch");
 
@@ -436,110 +495,101 @@ document.querySelectorAll(".monster-parent").forEach((monster) => {
         lineEl.remove();
         glitchVideo.remove();
       }, 2000);
-
-      cancelHold();
     }, 2000);
-  });
+  } else {
+    /* ── CAS 2 : fond ou zone transparente ── */
+    let voidCx = startCx;
+    let voidCy = startCy;
+    let voidIsHolding = true;
 
-  monster.addEventListener("mousemove", (e) => moveBar(e.clientX, e.clientY));
-  monster.addEventListener("mouseup", cancelHold);
-  monster.addEventListener("mouseleave", cancelHold);
-});
-
-/* =========================
-   CROIX ROUGE SI CLICK DANS LE VIDE
-========================= */
-
-document.getElementById("carousel").addEventListener("mousedown", (e) => {
-  if (e.button !== 0) return;
-  if (e.target.closest(".monster-parent, button, #timer, .text, .text-battery"))
-    return;
-
-  let cx = e.clientX;
-  let cy = e.clientY;
-  let holdTimeout = null;
-  let isHolding = true;
-
-  moveBar(cx, cy);
-  loadingBar.style.display = "block";
-  loadingFill.style.transition = "none";
-  loadingFill.style.width = "0%";
-
-  const loadingSound = document.getElementById("loading-sound");
-  loadingSound.currentTime = 0;
-  loadingSound.volume = getVolume("loading-sound");
-  loadingSound.play().catch((err) => console.log("Erreur loading-sound:", err));
-
-  requestAnimationFrame(() => {
-    loadingFill.style.transition = "width 2000ms linear";
-    loadingFill.style.width = "100%";
-  });
-
-  function onMove(ev) {
-    cx = ev.clientX;
-    cy = ev.clientY;
-    moveBar(cx, cy);
-  }
-
-  function onUp() {
-    if (!isHolding) return;
-    isHolding = false;
-    clearTimeout(holdTimeout);
+    moveBar(voidCx, voidCy);
+    loadingBar.style.display = "block";
     loadingFill.style.transition = "none";
     loadingFill.style.width = "0%";
-    loadingBar.style.display = "none";
-    loadingSound.pause();
+
+    const loadingSound = document.getElementById("loading-sound");
     loadingSound.currentTime = 0;
-    document.removeEventListener("mouseup", onUp);
-    document.removeEventListener("mousemove", onMove);
-  }
+    loadingSound.volume = getVolume("loading-sound");
+    loadingSound
+      .play()
+      .catch((err) => console.log("Erreur loading-sound:", err));
 
-  document.addEventListener("mousemove", onMove);
-  document.addEventListener("mouseup", onUp);
+    requestAnimationFrame(() => {
+      loadingFill.style.transition = "width 2000ms linear";
+      loadingFill.style.width = "100%";
+    });
 
-  holdTimeout = setTimeout(() => {
-    if (!isHolding) return;
-    isHolding = false;
-    loadingFill.style.transition = "none";
-    loadingFill.style.width = "0%";
-    loadingBar.style.display = "none";
-    loadingSound.pause();
-    loadingSound.currentTime = 0;
-
-    const missedSound = document.getElementById("missed-sound");
-    missedSound.currentTime = 0;
-    missedSound.volume = getVolume("missed-sound");
-    missedSound.play().catch((err) => console.log("Erreur missed-sound:", err));
-
-    document.body.classList.add("cursor-locked");
-
-    const shakeCross = document.createElement("div");
-    shakeCross.style.cssText = `
-      position: fixed;
-      pointer-events: none;
-      z-index: 9999;
-      left: ${cx - 10}px;
-      top: ${cy - 10}px;
-    `;
-    shakeCross.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16">
-      <line x1="2" y1="2" x2="14" y2="14" stroke="red" stroke-width="2.5"/>
-      <line x1="14" y1="2" x2="2" y2="14" stroke="red" stroke-width="2.5"/>
-    </svg>`;
-    shakeCross.classList.add("cross-visible");
-    document.body.appendChild(shakeCross);
-
-    function followMouse(ev) {
-      shakeCross.style.left = ev.clientX - 10 + "px";
-      shakeCross.style.top = ev.clientY - 10 + "px";
+    function onVoidMove(ev) {
+      voidCx = ev.clientX;
+      voidCy = ev.clientY;
+      moveBar(voidCx, voidCy);
     }
-    document.addEventListener("mousemove", followMouse);
 
-    setTimeout(() => {
-      shakeCross.remove();
-      document.body.classList.remove("cursor-locked");
-      document.removeEventListener("mousemove", followMouse);
-    }, 800);
-  }, 2000);
+    function onVoidUp() {
+      if (!voidIsHolding) return;
+      voidIsHolding = false;
+      clearTimeout(voidHoldTimeout);
+      loadingFill.style.transition = "none";
+      loadingFill.style.width = "0%";
+      loadingBar.style.display = "none";
+      loadingSound.pause();
+      loadingSound.currentTime = 0;
+      document.removeEventListener("mouseup", onVoidUp);
+      document.removeEventListener("mousemove", onVoidMove);
+    }
+
+    document.addEventListener("mousemove", onVoidMove);
+    document.addEventListener("mouseup", onVoidUp);
+
+    const voidHoldTimeout = setTimeout(() => {
+      if (!voidIsHolding) return;
+      voidIsHolding = false;
+      loadingFill.style.transition = "none";
+      loadingFill.style.width = "0%";
+      loadingBar.style.display = "none";
+      loadingSound.pause();
+      loadingSound.currentTime = 0;
+
+      document.removeEventListener("mouseup", onVoidUp);
+      document.removeEventListener("mousemove", onVoidMove);
+
+      const missedSound = document.getElementById("missed-sound");
+      missedSound.currentTime = 0;
+      missedSound.volume = getVolume("missed-sound");
+      missedSound
+        .play()
+        .catch((err) => console.log("Erreur missed-sound:", err));
+
+      document.body.classList.add("cursor-locked");
+
+      const shakeCross = document.createElement("div");
+      shakeCross.style.cssText = `
+        position: fixed;
+        pointer-events: none;
+        z-index: 9999;
+        left: ${voidCx - 10}px;
+        top: ${voidCy - 10}px;
+      `;
+      shakeCross.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 16 16">
+        <line x1="2" y1="2" x2="14" y2="14" stroke="red" stroke-width="2.5"/>
+        <line x1="14" y1="2" x2="2" y2="14" stroke="red" stroke-width="2.5"/>
+      </svg>`;
+      shakeCross.classList.add("cross-visible");
+      document.body.appendChild(shakeCross);
+
+      function followMouse(ev) {
+        shakeCross.style.left = ev.clientX - 10 + "px";
+        shakeCross.style.top = ev.clientY - 10 + "px";
+      }
+      document.addEventListener("mousemove", followMouse);
+
+      setTimeout(() => {
+        shakeCross.remove();
+        document.body.classList.remove("cursor-locked");
+        document.removeEventListener("mousemove", followMouse);
+      }, 800);
+    }, 2000);
+  }
 });
 
 /* =========================
@@ -582,7 +632,6 @@ function pauseGame() {
   menuButton.style.display = "none";
   document.getElementById("ambiance-music").pause();
 
-  // Remet le menu pause dans le bon état avant d'afficher
   pauseTitle.innerHTML = `PAUSED<span class="point-animation-p">.</span>`;
   pauseMainButtons.style.display = "flex";
   settingsMain.style.display = "none";
@@ -629,7 +678,6 @@ function endGame(won) {
     return;
   }
 
-  // Victoire : sons lancés EN PREMIER, resetSettings après
   createBlackout(true, () => {
     carousel.style.display = "none";
     pauseMenu.style.display = "none";
@@ -673,7 +721,6 @@ function resetSettings() {
   sensitivity = 5;
   document.getElementById("sensitivity-slider").value = 5;
   document.getElementById("sensitivity-value").textContent = "5";
-  // Pas d'applyVolumes() ici — ne pas couper les sons en cours
 }
 
 function resetGame() {
@@ -712,7 +759,7 @@ function resetGame() {
 
 function backToMenu() {
   clearIntervals();
-  stopAllSounds(); // stoppe TOUT sauf first-screen-music
+  stopAllSounds();
 
   index = 0;
   timeLeft = 120;
@@ -737,7 +784,7 @@ function backToMenu() {
   menuButton.style.display = "none";
 
   resetSettings();
-  playFirstScreenMusic(); // reprend la musique du menu
+  playFirstScreenMusic();
 }
 
 /* =========================
@@ -955,7 +1002,6 @@ document
   .forEach((button) => {
     let hasPlayed = false;
 
-    // Son au survol
     button.addEventListener("mouseenter", () => {
       if (hasPlayed) return;
       hoverSound.currentTime = 0;
@@ -968,7 +1014,6 @@ document
       hasPlayed = false;
     });
 
-    // Son au clic
     button.addEventListener("click", () => {
       const clickingSound = document.getElementById("clicking-sound");
       clickingSound.currentTime = 0;
