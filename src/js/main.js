@@ -261,6 +261,54 @@ function spawnMonster() {
    On detecte manuellement le pixel alpha du PNG.
 ========================= */
 
+const monsterRegistry = [];
+
+function setupMonsterClickTransparency(monsterImg) {
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.src = monsterImg.src;
+
+  img.onload = () => {
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, w, h);
+    monsterRegistry.push({ el: monsterImg, canvas, ctx });
+  };
+}
+
+function hitTest(e) {
+  const x = e.clientX,
+    y = e.clientY;
+  monsterRegistry.forEach(({ el, canvas, ctx }) => {
+    const r = el.getBoundingClientRect();
+    if (x < r.left || x > r.right || y < r.top || y > r.bottom) {
+      el.style.pointerEvents = "auto";
+      return;
+    }
+    const px = Math.floor(((x - r.left) * canvas.width) / r.width);
+    const py = Math.floor(((y - r.top) * canvas.height) / r.height);
+    const alpha = ctx.getImageData(px, py, 1, 1).data[3] / 255;
+
+    if (alpha <= TRANSPARENCY_THRESHOLD) {
+      el.style.pointerEvents = "none";
+    } else {
+      el.style.pointerEvents = "auto";
+    }
+  });
+}
+
+if (window.PointerEvent) {
+  document.addEventListener("pointermove", hitTest, { passive: true });
+  document.addEventListener("pointerdown", hitTest, { passive: true });
+} else {
+  document.addEventListener("touchmove", hitTest, { passive: true });
+  document.addEventListener("touchstart", hitTest, { passive: true });
+}
+
 function getVisibleMonsterAtPoint(cx, cy) {
   const visibleMonsters = Array.from(
     document.querySelectorAll(".monster-parent.visible"),
