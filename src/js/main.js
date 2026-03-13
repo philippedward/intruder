@@ -1481,11 +1481,12 @@ carouselHard.addEventListener("mousedown", (e) => {
       if (!isHolding) return;
       isHolding = false;
 
-      hitObject.classList.remove("visible");
-      hitObject.style.opacity = "0";
-      hitObject.classList.add("found");
-      objectCount--;
-      if (objectCount < 0) objectCount = 0;
+      hitObject.classList.add("visible");
+      hitObject.style.opacity = "1";
+      setTimeout(() => {
+        hitObject.classList.remove("visible");
+        hitObject.style.opacity = "0";
+      }, 12000);
 
       loadingFill.style.transition = "none";
       loadingFill.style.width = "0%";
@@ -1744,30 +1745,28 @@ function buildObjectQueue() {
 }
 
 function spawnObject() {
-  if (objectQueue.length === 0) buildObjectQueue();
+  const allObjects = Array.from(
+    carouselHard.querySelectorAll(".object-parent"),
+  );
+  const hidden = allObjects.filter((obj) => !obj.classList.contains("visible"));
+  if (hidden.length === 0) return;
+  const random = hidden[Math.floor(Math.random() * hidden.length)];
+  random.classList.add("visible");
+  random.style.opacity = "1";
 
-  while (objectQueue.length > 0) {
-    const object = objectQueue.shift();
-
-    if (object.classList.contains("visible")) continue;
-
-    // spawn objet comme le monstre
-    object.classList.add("visible");
-    object.style.opacity = "1";
-    lastSpawnedObject = object;
-    objectCount++;
-
-    return;
-  }
+  setTimeout(() => {
+    if (!random.classList.contains("visible")) return;
+    random.classList.remove("visible");
+    random.style.opacity = "0";
+  }, 12000);
 }
 
-// CLICK SUR OBJETS VISIBLES
 function getVisibleObjectAtPointHard(cx, cy) {
-  const visibleObjects = Array.from(
-    carouselHard.querySelectorAll(".object-parent.visible"),
+  const objects = Array.from(
+    carouselHard.querySelectorAll(".object-parent:not(.found)"),
   );
 
-  for (const obj of visibleObjects) {
+  for (const obj of objects) {
     const rect = obj.getBoundingClientRect();
 
     if (
@@ -1780,15 +1779,18 @@ function getVisibleObjectAtPointHard(cx, cy) {
     }
 
     const canvas = document.createElement("canvas");
-    canvas.width = obj.naturalWidth;
-    canvas.height = obj.naturalHeight;
+    canvas.width = obj.naturalWidth || 1;
+    canvas.height = obj.naturalHeight || 1;
     const ctx = canvas.getContext("2d");
-    ctx.drawImage(obj, 0, 0);
-
-    const x = Math.floor(((cx - rect.left) / rect.width) * obj.naturalWidth);
-    const y = Math.floor(((cy - rect.top) / rect.height) * obj.naturalHeight);
 
     try {
+      ctx.drawImage(obj, 0, 0);
+      const x = Math.floor(
+        ((cx - rect.left) / rect.width) * (obj.naturalWidth || 1),
+      );
+      const y = Math.floor(
+        ((cy - rect.top) / rect.height) * (obj.naturalHeight || 1),
+      );
       const pixel = ctx.getImageData(x, y, 1, 1).data;
       if (pixel[3] >= 25) return obj;
     } catch {

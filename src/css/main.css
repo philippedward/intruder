@@ -631,14 +631,14 @@ a:hover {
 
 .object-parent {
   position: absolute;
-  z-index: 6;
-  opacity: 0;
+  z-index: 4;
+  opacity: 1;
   transition: opacity 0.1s;
   pointer-events: none;
 }
 
 .object-parent.visible {
-  opacity: 1;
+  opacity: 0;
   pointer-events: none;
   cursor: crosshair;
   animation:
