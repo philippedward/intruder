@@ -1732,12 +1732,10 @@ let lastSpawnedObject = null;
 let totalObjects = 10; // nombre total d'objets à spawn
 
 function buildObjectQueue() {
-  // tous les objets non trouvés
   const allObjects = Array.from(
     carouselHard.querySelectorAll(".object-parent:not(.found)"),
   );
 
-  // shuffle
   for (let i = allObjects.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [allObjects[i], allObjects[j]] = [allObjects[j], allObjects[i]];
@@ -1747,19 +1745,23 @@ function buildObjectQueue() {
 }
 
 function spawnObject() {
-  const allObjects = Array.from(
-    carouselHard.querySelectorAll(".object-parent"),
-  );
-  const hidden = allObjects.filter((obj) => !obj.classList.contains("visible"));
-  if (hidden.length === 0) return;
-  const random = hidden[Math.floor(Math.random() * hidden.length)];
-  random.classList.add("visible");
-  random.style.opacity = "1";
+  if (objectQueue.length === 0) {
+    buildObjectQueue();
+  }
+
+  const obj = objectQueue.shift();
+
+  if (!obj) return;
+
+  obj.classList.add("visible");
+  obj.style.opacity = "1";
+
+  lastSpawnedObject = obj;
 
   setTimeout(() => {
-    if (!random.classList.contains("visible")) return;
-    random.classList.remove("visible");
-    random.style.opacity = "0";
+    if (!obj.classList.contains("visible")) return;
+    obj.classList.remove("visible");
+    obj.style.opacity = "0";
   }, 12000);
 }
 
