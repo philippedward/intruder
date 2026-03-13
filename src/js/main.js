@@ -35,6 +35,7 @@ let musicVolume = 0.5;
 let clickVolume = 0.5;
 let settingsFromFirst = false;
 let sensitivity = 5;
+let alarmPlayed = false;
 
 /* =========================
    VOLUME HELPER
@@ -44,7 +45,7 @@ const BASE_VOLUMES = {
   "ambiance-music": 1.0,
   "first-screen-music": 0.9,
   "win-sound": 1.0,
-  "wiiin-sound": 0.3,
+  "alarm-sound": 0.3,
   "dead-sound": 1.0,
   "iiii-sound": 0.6,
   "time-sound": 1.0,
@@ -81,10 +82,12 @@ function applyVolumes() {
 ========================= */
 
 function stopAllSounds() {
-  document.querySelectorAll("audio:not(#first-screen-music)").forEach((el) => {
-    el.pause();
-    el.currentTime = 0;
-  });
+  document
+    .querySelectorAll("audio:not(#first-screen-music):not(#alarm-sound)")
+    .forEach((el) => {
+      el.pause();
+      el.currentTime = 0;
+    });
 }
 
 function stopEverything() {
@@ -155,6 +158,14 @@ function updateTimer() {
   const seconds = timeLeft % 60;
   timerElement.textContent =
     minutes + ":" + seconds.toString().padStart(2, "0");
+
+  if (timeLeft === 0 && !alarmPlayed) {
+    const alarm = document.getElementById("alarm-sound");
+    alarm.currentTime = 0;
+    alarm.volume = getVolume("alarm-sound");
+    alarm.play().catch((err) => console.log("Erreur alarm-sound:", err));
+    alarmPlayed = true;
+  }
 
   if (timeLeft <= 30 && !timeAlertPlayed) {
     const timeSound = document.getElementById("time-sound");
@@ -737,11 +748,6 @@ function endGame(won) {
     gameOverMessage.innerHTML = `It's Gone... <span class="for-now-glow">For Now</span>`;
 
     const winSound = document.getElementById("win-sound");
-    const iiiiWin = document.getElementById("wiiin-sound");
-
-    iiiiWin.currentTime = 0;
-    iiiiWin.volume = getVolume("wiiin-sound");
-    iiiiWin.play().catch((err) => console.log("Erreur wiiin-sound:", err));
 
     winSound.currentTime = 0;
     winSound.volume = getVolume("win-sound");
@@ -1194,7 +1200,7 @@ document.addEventListener("visibilitychange", () => {
         .play()
         .catch(() => {});
       document
-        .getElementById("wiiin-sound")
+        .getElementById("alarm-sound")
         .play()
         .catch(() => {});
       document
@@ -1308,8 +1314,12 @@ function updateTimerHard() {
 
 function startIntervalsHard() {
   timerInterval = setInterval(updateTimerHard, 1000);
-  monsterInterval = setInterval(spawnMonsterHard, 10000);
-  objectInterval = setInterval(spawnObject, 12000);
+
+  // attendre 30 secondes avant les apparitions
+  setTimeout(() => {
+    monsterInterval = setInterval(spawnMonsterHard, 10000);
+    objectInterval = setInterval(spawnObject, 12000);
+  }, 30000);
 
   const doorSounds = ["r-door-sound", "l-door-sound"];
   let doorPlayCount = { "r-door-sound": 0, "l-door-sound": 0 };
@@ -1388,13 +1398,13 @@ function startGameHard() {
   carouselHard.style.display = "block";
   menuButton.style.display = "block";
 
-  timeLeft = 120;
+  timeLeft = 240;
   monsterCount = 0;
   missedObjects = 0;
   monsterQueueHard = [];
   lastSpawnedMonsterHard = null;
   timeAlertPlayed = false;
-  timerElementHard.textContent = "2:00";
+  timerElementHard.textContent = "4:00";
 
   const ambianceMusic = document.getElementById("ambiance-music");
   ambianceMusic.volume = getVolume("ambiance-music");
