@@ -181,6 +181,7 @@ function clearIntervals() {
   clearInterval(glitchInterval);
   clearInterval(timestampInterval);
   clearInterval(doorInterval);
+  clearInterval(objectInterval);
 }
 
 function startIntervals() {
@@ -779,6 +780,7 @@ function resetGame() {
   index = 0;
   timeLeft = 120;
   monsterCount = 0;
+  objectCount = 0;
   timeAlertPlayed = false;
   monsterQueue = [];
   lastSpawnedMonster = null;
@@ -787,6 +789,11 @@ function resetGame() {
   document.querySelectorAll(".monster-parent").forEach((monster) => {
     monster.classList.remove("visible");
     monster.style.opacity = "0";
+  });
+
+  document.querySelectorAll(".object-parent").forEach((obj) => {
+    obj.classList.remove("visible");
+    obj.style.opacity = "0";
   });
 
   updateCarousel();
@@ -814,14 +821,29 @@ function backToMenu() {
   index = 0;
   timeLeft = 120;
   monsterCount = 0;
+  objectCount = 0;
   monsterQueue = [];
   lastSpawnedMonster = null;
   timeAlertPlayed = false;
+  // RESET DES OBJETS
+  carouselHard.querySelectorAll(".object-parent").forEach((obj) => {
+    obj.classList.remove("visible", "found"); // visible disparaît, found reset
+    obj.style.opacity = "0"; // invisible
+  });
+
+  objectCount = 0;
+  objectQueue = [];
+  lastSpawnedObject = null;
   timerElement.textContent = "2:00";
 
   document.querySelectorAll(".monster-parent").forEach((monster) => {
     monster.classList.remove("visible");
     monster.style.opacity = "0";
+  });
+
+  document.querySelectorAll(".object-parent").forEach((obj) => {
+    obj.classList.remove("visible");
+    obj.style.opacity = "0";
   });
 
   updateCarousel();
@@ -1205,7 +1227,7 @@ info.addEventListener("click", (e) => {
   }
 });
 
-/* =========================
+/* ===============================================================================================================================================================================
    JEU VERSION HARD
 ========================= */
 
@@ -1215,6 +1237,7 @@ const roomsHard = document.querySelectorAll(".img-text-hard");
 const btnLeftHard = document.querySelector(".arrow-left-hard");
 const btnRightHard = document.querySelector(".arrow-right-hard");
 const timerElementHard = document.getElementById("timer-hard");
+
 let indexHard = 0;
 
 function updateCarouselHard() {
@@ -1285,7 +1308,8 @@ function updateTimerHard() {
 
 function startIntervalsHard() {
   timerInterval = setInterval(updateTimerHard, 1000);
-  monsterInterval = setInterval(spawnMonsterHard, 7000);
+  monsterInterval = setInterval(spawnMonsterHard, 10000);
+  objectInterval = setInterval(spawnObject, 12000);
 
   const doorSounds = ["r-door-sound", "l-door-sound"];
   let doorPlayCount = { "r-door-sound": 0, "l-door-sound": 0 };
@@ -1410,6 +1434,88 @@ carouselHard.addEventListener("mousedown", (e) => {
   const startCx = e.clientX;
   const startCy = e.clientY;
   const hitMonster = getVisibleMonsterAtPointHard(startCx, startCy);
+
+  const hitObject = getVisibleObjectAtPointHard(startCx, startCy);
+  if (!hitMonster && hitObject) {
+    let isHolding = true;
+
+    moveBar(startCx, startCy);
+    loadingBar.style.display = "block";
+    loadingFill.style.transition = "none";
+    loadingFill.style.width = "0%";
+
+    const loadingSound = document.getElementById("loading-sound");
+    loadingSound.currentTime = 0;
+    loadingSound.volume = getVolume("loading-sound");
+    loadingSound
+      .play()
+      .catch((err) => console.log("Erreur loading-sound:", err));
+
+    requestAnimationFrame(() => {
+      loadingFill.style.transition = "width 2000ms linear";
+      loadingFill.style.width = "100%";
+    });
+
+    function onMoveObj(ev) {
+      if (!isHolding) return;
+      moveBar(ev.clientX, ev.clientY);
+    }
+
+    function cancelHoldObj() {
+      if (!isHolding) return;
+      isHolding = false;
+      clearTimeout(holdTimeoutObj);
+      loadingFill.style.transition = "none";
+      loadingFill.style.width = "0%";
+      loadingBar.style.display = "none";
+      loadingSound.pause();
+      loadingSound.currentTime = 0;
+      document.removeEventListener("mousemove", onMoveObj);
+      document.removeEventListener("mouseup", cancelHoldObj);
+    }
+
+    document.addEventListener("mousemove", onMoveObj);
+    document.addEventListener("mouseup", cancelHoldObj);
+
+    const holdTimeoutObj = setTimeout(() => {
+      if (!isHolding) return;
+      isHolding = false;
+
+      hitObject.classList.remove("visible");
+      hitObject.style.opacity = "0";
+      hitObject.classList.add("found");
+      objectCount--;
+      if (objectCount < 0) objectCount = 0;
+
+      loadingFill.style.transition = "none";
+      loadingFill.style.width = "0%";
+      loadingBar.style.display = "none";
+      loadingSound.pause();
+      loadingSound.currentTime = 0;
+
+      document.removeEventListener("mousemove", onMoveObj);
+      document.removeEventListener("mouseup", cancelHoldObj);
+
+      carouselHard.classList.add("screen-glitch");
+      const scanEl = document.createElement("div");
+      scanEl.className = "screen-glitch-scan";
+      carouselHard.appendChild(scanEl);
+      const lineEl = document.createElement("div");
+      lineEl.className = "screen-glitch-line";
+      carouselHard.appendChild(lineEl);
+      const glitchSound = document.getElementById("monster-glitch-sound");
+      glitchSound.currentTime = 0;
+      glitchSound.volume = getVolume("monster-glitch-sound");
+      glitchSound.play();
+      setTimeout(() => {
+        carouselHard.classList.remove("screen-glitch");
+        scanEl.remove();
+        lineEl.remove();
+      }, 2000);
+    }, 2000);
+
+    return;
+  }
 
   if (hitMonster) {
     /* ── CAS 1 : monstre trouve ── */
@@ -1616,50 +1722,79 @@ document
 /* =========================
    SPAWN DES OBJECTS
 ========================= */
-
+let objectCount = 0;
+let objectInterval = null;
 let objectQueue = [];
 let lastSpawnedObject = null;
+let totalObjects = 10; // nombre total d'objets à spawn
 
-function buildobjectQueue() {
-  const allObjects = Array.from(document.querySelectorAll(".object-parent"));
+function buildObjectQueue() {
+  // tous les objets non trouvés
+  const allObjects = Array.from(
+    carouselHard.querySelectorAll(".object-parent:not(.found)"),
+  );
 
+  // shuffle
   for (let i = allObjects.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [allObjects[i], allObjects[j]] = [allObjects[j], allObjects[i]];
-  }
-
-  if (
-    lastSpawnedObject !== null &&
-    allObjects[0] === lastSpawnedObject &&
-    allObjects.length > 1
-  ) {
-    [allObjects[0], allObjects[1]] = [allObjects[0]];
   }
 
   objectQueue = allObjects;
 }
 
 function spawnObject() {
-  if (objectQueue.length === 0) buildobjectQueue();
+  if (objectQueue.length === 0) buildObjectQueue();
 
-  let attempts = 0;
-  while (objectQueue.length > 0 && attempts < objectQueue.length) {
+  while (objectQueue.length > 0) {
     const object = objectQueue.shift();
 
-    if (object.classList.contains("visible")) {
-      objectQueue.push(object);
-      attempts++;
-      continue;
-    }
+    if (object.classList.contains("visible")) continue;
 
+    // spawn objet comme le monstre
     object.classList.add("visible");
     object.style.opacity = "1";
     lastSpawnedObject = object;
     objectCount++;
 
-    if (objectCount >= 4) {
-      endGame(false);
-    }
     return;
   }
+}
+
+// CLICK SUR OBJETS VISIBLES
+function getVisibleObjectAtPointHard(cx, cy) {
+  const visibleObjects = Array.from(
+    carouselHard.querySelectorAll(".object-parent.visible"),
+  );
+
+  for (const obj of visibleObjects) {
+    const rect = obj.getBoundingClientRect();
+
+    if (
+      cx < rect.left ||
+      cx > rect.right ||
+      cy < rect.top ||
+      cy > rect.bottom
+    ) {
+      continue;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = obj.naturalWidth;
+    canvas.height = obj.naturalHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(obj, 0, 0);
+
+    const x = Math.floor(((cx - rect.left) / rect.width) * obj.naturalWidth);
+    const y = Math.floor(((cy - rect.top) / rect.height) * obj.naturalHeight);
+
+    try {
+      const pixel = ctx.getImageData(x, y, 1, 1).data;
+      if (pixel[3] >= 25) return obj;
+    } catch {
+      return obj;
+    }
+  }
+
+  return null;
 }
