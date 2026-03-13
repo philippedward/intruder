@@ -629,6 +629,25 @@ a:hover {
     monster-flicker 4s steps(1) infinite 0.5s;
 }
 
+.monster-parent-hard {
+  position: absolute;
+  max-width: 5%;
+  max-height: 40%;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.1s;
+  pointer-events: none;
+}
+
+.monster-parent-hard.visible {
+  opacity: 1;
+  pointer-events: none;
+  cursor: crosshair;
+  animation:
+    monster-appear 0.3s steps(3) forwards,
+    monster-flicker 4s steps(1) infinite 0.5s;
+}
+
 .object-parent {
   position: absolute;
   z-index: 4;

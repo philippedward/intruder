@@ -1246,7 +1246,7 @@ function updateCarouselHard() {
 
 function getVisibleMonsterAtPointHard(cx, cy) {
   const visibleMonsters = Array.from(
-    carouselHard.querySelectorAll(".monster-parent.visible"),
+    carouselHard.querySelectorAll(".monster-parent-hard.visible"),
   );
 
   for (const monster of visibleMonsters) {
@@ -1333,7 +1333,7 @@ let lastSpawnedMonsterHard = null;
 
 function buildMonsterQueueHard() {
   const allMonsters = Array.from(
-    carouselHard.querySelectorAll(".monster-parent"),
+    carouselHard.querySelectorAll(".monster-parent-hard"),
   );
 
   for (let i = allMonsters.length - 1; i > 0; i--) {
@@ -1378,6 +1378,8 @@ function spawnMonsterHard() {
 }
 
 function startGameHard() {
+  resetObjectsHard();
+
   startScreen.style.display = "none";
   firstScreen.style.display = "none";
   gameOverScreen.style.display = "none";
@@ -1799,4 +1801,18 @@ function getVisibleObjectAtPointHard(cx, cy) {
   }
 
   return null;
+}
+
+function resetObjectsHard() {
+  const objects = carouselHard.querySelectorAll(".object-parent");
+
+  objects.forEach((obj) => {
+    obj.classList.remove("visible");
+    obj.classList.remove("found");
+    obj.style.opacity = "1";
+  });
+
+  objectQueue = [];
+  lastSpawnedObject = null;
+  objectCount = 0;
 }
