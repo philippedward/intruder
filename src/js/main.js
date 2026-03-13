@@ -1390,6 +1390,7 @@ function startGameHard() {
 
   timeLeft = 120;
   monsterCount = 0;
+  missedObjects = 0;
   monsterQueueHard = [];
   lastSpawnedMonsterHard = null;
   timeAlertPlayed = false;
@@ -1729,7 +1730,8 @@ let objectCount = 0;
 let objectInterval = null;
 let objectQueue = [];
 let lastSpawnedObject = null;
-let totalObjects = 10; // nombre total d'objets à spawn
+let totalObjects = 10;
+let missedObjects = 0;
 
 function buildObjectQueue() {
   const allObjects = Array.from(
@@ -1750,18 +1752,23 @@ function spawnObject() {
   }
 
   const obj = objectQueue.shift();
-
   if (!obj) return;
 
   obj.classList.add("visible");
   obj.style.opacity = "1";
 
-  lastSpawnedObject = obj;
-
   setTimeout(() => {
     if (!obj.classList.contains("visible")) return;
+
     obj.classList.remove("visible");
     obj.style.opacity = "0";
+
+    // objet raté
+    missedObjects++;
+
+    if (missedObjects >= 4) {
+      endGame(false);
+    }
   }, 12000);
 }
 
