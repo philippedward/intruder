@@ -1497,7 +1497,7 @@ carouselHard.addEventListener("mousedown", (e) => {
       setTimeout(() => {
         hitObject.classList.remove("visible");
         hitObject.style.opacity = "0";
-      }, 12000);
+      }, 20000);
 
       loadingFill.style.transition = "none";
       loadingFill.style.width = "0%";
@@ -1777,7 +1777,7 @@ function spawnObject() {
     if (missedObjects >= 4) {
       endGame(false);
     }
-  }, 12000);
+  }, 20000);
 }
 
 function getVisibleObjectAtPointHard(cx, cy) {
