@@ -1145,7 +1145,6 @@ document.addEventListener("mousemove", (e) => {
   if (!eyeInside || !eyeOutside) return;
 
   eyeInside.style.opacity = "1";
-  eyeOutside.style.opacity = "1";
   if (videoAnimation) videoAnimation.style.opacity = "0";
 
   const rect = eyeOutside.getBoundingClientRect();
@@ -1163,7 +1162,6 @@ document.addEventListener("mousemove", (e) => {
   clearTimeout(eyeIdleTimeout);
   eyeIdleTimeout = setTimeout(() => {
     eyeInside.style.opacity = "0";
-    eyeOutside.style.opacity = "0";
     if (videoAnimation) videoAnimation.style.opacity = "1";
   }, 1000);
 });

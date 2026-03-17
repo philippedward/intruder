@@ -1351,8 +1351,8 @@ input[type="range"]::-webkit-slider-thumb {
   display: block;
   width: 100%;
   position: relative;
-  z-index: 2;
-  transition: opacity 0.1s ease;
+  z-index: 4;
+  opacity: 1 !important;
 }
 
 .insdie {
