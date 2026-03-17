@@ -1746,7 +1746,7 @@ let missedObjects = 0;
 
 function buildObjectQueue() {
   const allObjects = Array.from(
-    carouselHard.querySelectorAll(".object-parent:not(.found)"),
+    carouselHard.querySelectorAll(".object-parent"),
   );
 
   for (let i = allObjects.length - 1; i > 0; i--) {
@@ -1762,7 +1762,16 @@ function spawnObject() {
     buildObjectQueue();
   }
 
-  const obj = objectQueue.shift();
+  // cherche le premier objet non visible dans la queue
+  let obj = null;
+  while (objectQueue.length > 0) {
+    const candidate = objectQueue.shift();
+    if (!candidate.classList.contains("visible")) {
+      obj = candidate;
+      break;
+    }
+  }
+
   if (!obj) return;
 
   obj.classList.add("visible");
@@ -1774,12 +1783,9 @@ function spawnObject() {
     obj.classList.remove("visible");
     obj.style.opacity = "0";
 
-    // missedObjects--;
-    // if (missedObjects < 0) missedObjects = 0;
-
     missedObjects++;
 
-    if (missedObjects >= 4) {
+    if (missedObjects >= 6) {
       endGame(false);
       return;
     }
